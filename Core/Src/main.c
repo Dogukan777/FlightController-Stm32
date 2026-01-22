@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -25,6 +26,9 @@
 #include "SH1106.h"
 #include "fonts.h"
 #include "serialManager.h"
+#include "wpManager.h"
+#include <stdio.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,6 +51,23 @@ I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart2;
 
+/* Definitions for defaultTask */
+osThreadId_t SMTaskHandle;
+osThreadId_t UploadedWPTaskHandle;
+
+/* --- Task Attributes --- */
+const osThreadAttr_t SMTask_attributes = {
+  .name = "SMTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
+const osThreadAttr_t UploadedWPTask_attributes = {
+  .name = "UploadedWPTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -56,12 +77,17 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
+
+void StartSMTask(void *argument);
+void StartUploadedWPTask(void *argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 
 /* USER CODE END 0 */
 
@@ -82,7 +108,11 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_USART2_UART_Init();
+  SM_Init(&huart2);
+  SH1106_Init();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -93,45 +123,169 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_I2C1_Init();
-  MX_USART2_UART_Init();
-  SM_Init(&huart2);
+  displayScreen("Booting...");
   /* USER CODE BEGIN 2 */
-  /* USER CODE BEGIN 2 */
-  /*SH1106_Init(); // initialise the display
-
-  if (!SH1106_Init())
-  {
-      while(1);   // ekran bulunamadı
-  }
-  SH1106_Clear();
-  SH1106_GotoXY (12,10); // goto 10, 10
-  SH1106_Puts ("HELLO", &Font_7x10, 1); // print Hello
-  SH1106_GotoXY (12, 30);
-  SH1106_Puts ("WORLD !!", &Font_7x10, 1);
-  SH1106_UpdateScreen(); // update screen*/
-
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+  SMTaskHandle = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
+  UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
   while (1)
   {
-	  if (SM_GotDisconnect()) {
-	      sm_connected = 0;
-	      SM_SendString("FALSE\n");
-	  }
-	  else if (SM_GotConnect()) {
-	      sm_connected = 1;
-	      SM_SendString("TRUE\n");
-	  }
-
+    /* USER CODE END WHILE */
   }
 
-  /* USER CODE END 3 */
+
+
 }
+  /* USER CODE BEGIN 3 */
+void StartSMTask(void *argument)
+{
+  (void)argument;
+
+  char line[128];
+
+  for (;;)
+  {
+    while (SM_ReadLine(line, sizeof(line)) > 0)
+    {
+      // 1) CONNECT/DISCONNECT satırlarını burada handle et
+      if (strcmp(line, "CONNECT") == 0)
+      {
+        if (sm_connected == 0) {
+          sm_connected = 1;
+          displayScreen("Connect");
+          SM_SendString("TRUE\n");
+        }
+      }
+      else if (strcmp(line, "DISCONNECT") == 0)
+      {
+        if (sm_connected == 1) {
+          sm_connected = 0;
+          displayScreen("Disconnect");
+          SM_SendString("FALSE\n");
+        }
+      }
+      else
+      {
+        // 2) Diğer satırlar WP ise wp manager'a ver
+        WP_ProcessLine(line);
+      }
+    }
+
+    osDelay(5);
+  }
+}
+
+
+
+void StartUploadedWPTask(void *argument)
+{
+  (void)argument;
+
+  static uint16_t showIdx = 0;
+  char top[32];
+  char bottom[32];
+
+  for (;;)
+  {
+    if (WP_IsReady() && wp_count > 0)
+    {
+      if (showIdx >= wp_count) showIdx = 0;
+
+      // Üst: WP sayısı ve index
+      snprintf(top, sizeof(top),
+               "WP %u/%u",
+               (unsigned)(showIdx + 1),
+               (unsigned)wp_count);
+
+      // Alt: LAT
+      snprintf(bottom, sizeof(bottom),
+               "LAT:%0.6f",
+               wp_list[showIdx].lat);
+
+      displayTwoLines(top, bottom);
+
+      showIdx++;
+      osDelay(2000);
+      continue;
+    }
+
+    osDelay(50);
+  }
+}
+
+
+
+
+void displayScreen(const char *str)
+{
+  SH1106_Clear();
+  SH1106_GotoXY(5, 5);
+  SH1106_Puts((char*)str, &Font_7x10, 1);
+  SH1106_UpdateScreen();
+
+  if (osKernelGetState() == osKernelRunning) osDelay(5);
+  else HAL_Delay(5);
+}
+void displayTwoLines(const char *top, const char *bottom)
+{
+  SH1106_Clear();
+
+  // Üst satır
+  SH1106_GotoXY(5, 5);
+  SH1106_Puts((char*)top, &Font_7x10, 1);
+
+  // Alt satır
+  SH1106_GotoXY(5, 30);
+  SH1106_Puts((char*)bottom, &Font_7x10, 1);
+
+  SH1106_UpdateScreen();
+
+  if (osKernelGetState() == osKernelRunning) osDelay(5);
+  else HAL_Delay(5);
+}
+
+
+
+/* USER CODE END 3 */
 
 /**
   * @brief System Clock Configuration
@@ -264,6 +418,15 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+
 
 /**
   * @brief  This function is executed in case of error occurrence.

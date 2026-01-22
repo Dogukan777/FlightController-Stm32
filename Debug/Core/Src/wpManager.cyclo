@@ -1,0 +1,6 @@
+../Core/Src/wpManager.c:13:6:WP_Reset	1
+../Core/Src/wpManager.c:22:13:WP_OnBegin	1
+../Core/Src/wpManager.c:32:13:WP_OnEnd	1
+../Core/Src/wpManager.c:41:16:WP_ParseCsv	3
+../Core/Src/wpManager.c:72:6:WP_ProcessLine	14
+../Core/Src/wpManager.c:120:9:WP_IsReady	1
