@@ -24,6 +24,7 @@
 #include "ssd1306.h"
 #include "SH1106.h"
 #include "fonts.h"
+#include "serialManager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +45,8 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -52,6 +55,7 @@ I2C_HandleTypeDef hi2c1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -91,9 +95,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
+  MX_USART2_UART_Init();
+  SM_Init(&huart2);
   /* USER CODE BEGIN 2 */
   /* USER CODE BEGIN 2 */
-  SH1106_Init(); // initialise the display
+  /*SH1106_Init(); // initialise the display
 
   if (!SH1106_Init())
   {
@@ -104,39 +110,26 @@ int main(void)
   SH1106_Puts ("HELLO", &Font_7x10, 1); // print Hello
   SH1106_GotoXY (12, 30);
   SH1106_Puts ("WORLD !!", &Font_7x10, 1);
-  SH1106_UpdateScreen(); // update screen
-
-  /*SSD1306_Init();
-  SSD1306_Clear();
-  SSD1306_UpdateScreen();
- char buf[16];
-  snprintf(buf, sizeof(buf), "ControlTask");
-
-  SSD1306_Clear();
-   SSD1306_GotoXY(5, 30);
-   SSD1306_Puts(buf, &Font_11x18, 1);
-   SSD1306_UpdateScreen();*/
+  SH1106_UpdateScreen(); // update screen*/
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  uint8_t i = 0;
-  char buf[16];
 
   while (1)
   {
-	  snprintf(buf, sizeof(buf), "%d", i);
-	  HAL_Delay(1000);
+	  if (SM_GotDisconnect()) {
+	      sm_connected = 0;
+	      SM_SendString("FALSE\n");
+	  }
+	  else if (SM_GotConnect()) {
+	      sm_connected = 1;
+	      SM_SendString("TRUE\n");
+	  }
 
-	  SH1106_GotoXY(10, 45);
-	  SH1106_Puts(buf, &Font_7x10, SH1106_COLOR_WHITE);
-	  SH1106_UpdateScreen();
-	  i++;
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
   }
+
   /* USER CODE END 3 */
 }
 
@@ -216,6 +209,39 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -227,6 +253,7 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
