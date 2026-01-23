@@ -2346,7 +2346,7 @@ void StartUploadedWPTask(void *argument)
  80016b0:	4a11      	ldr	r2, [pc, #68]	@ (80016f8 <StartUploadedWPTask+0xb4>)
  80016b2:	2120      	movs	r1, #32
  80016b4:	f007 fa0e 	bl	8008ad4 <sniprintf>
-               "LAT:%0.6f",
+               "LAT:%0.7f",
                wp_list[showIdx].lat);
 
       displayTwoLines(top, bottom);

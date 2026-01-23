@@ -238,7 +238,7 @@ void StartUploadedWPTask(void *argument)
 
       // Alt: LAT
       snprintf(bottom, sizeof(bottom),
-               "LAT:%0.6f",
+               "LAT:%0.7f",
                wp_list[showIdx].lat);
 
       displayTwoLines(top, bottom);
