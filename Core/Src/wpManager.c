@@ -2,7 +2,7 @@
 #include "serialManager.h"
 #include <string.h>
 #include <stdio.h>
-
+#include "wpStorage.h"
 
 Waypoint wp_list[MAX_WP];
 volatile uint16_t wp_count = 0;
@@ -16,7 +16,6 @@ void WP_Reset(void)
     wp_expected = 0;
     wp_receiving = 0;
     wp_ready = 0;
-    // wp_list temizlemek şart değil; wp_count kadarını kullanacaksın.
 }
 
 static void WP_OnBegin(uint16_t expected)
@@ -25,16 +24,13 @@ static void WP_OnBegin(uint16_t expected)
     wp_expected = expected;
     wp_receiving = 1;
     wp_ready = 0;
-    // İstersen Qt’ye ACK at:
-    // SM_SendString("OK_BEGIN\n");
 }
 
 static void WP_OnEnd(void)
 {
     wp_receiving = 0;
     wp_ready = 1;
-    // İstersen Qt’ye ACK:
-    // SM_SendString("OK_END\n");
+    WP_SaveToFlash();
 }
 
 // CSV satır parse: WP,lat,lon,alt,dist,radius,"status"
@@ -93,8 +89,6 @@ void WP_ProcessLine(const char *line)
     // 3) WP,... satırları
     if (wp_receiving && strncmp(line, "WP,", 3) == 0) {
         if (wp_count >= MAX_WP) {
-            // taşma, alımı durdurmak istersen:
-            // wp_receiving = 0;
             SM_SendString("ERR_FULL\n");
             return;
         }
@@ -103,21 +97,48 @@ void WP_ProcessLine(const char *line)
         if (WP_ParseCsv(line, &tmp)) {
             wp_list[wp_count++] = tmp;
 
-            // beklenen sayı kadar geldiyse otomatik bitir (opsiyonel)
             if (wp_expected > 0 && wp_count >= wp_expected) {
                 WP_OnEnd();
             }
         } else {
-            // parse hatası
              SM_SendString("ERR_PARSE\n");
         }
         return;
     }
 
-    // Diğer mesajlar (CONNECT/DISCONNECT vs) burada ignore edilebilir.
 }
+void WP_SendAllToQt(void)
+{
+    char out[160];
 
+    // header
+    snprintf(out, sizeof(out), "WP_BEGIN,%u\n", (unsigned)wp_count);
+    SM_SendString(out);
+
+    for (uint16_t i = 0; i < wp_count; i++) {
+
+        // status tırnak içinde gitsin
+        snprintf(out, sizeof(out),
+                 "WP,%.7f,%.7f,%.2f,%.2f,%.2f,\"%s\"\n",
+                 wp_list[i].lat,
+                 wp_list[i].lon,
+                 wp_list[i].alt,
+                 wp_list[i].dist,
+                 wp_list[i].radius,
+                 wp_list[i].status);
+
+        SM_SendString(out);
+
+        osDelay(2); // UART buffer taşmasın diye küçük nefes
+    }
+
+    SM_SendString("WP_END\n");
+}
 uint8_t WP_IsReady(void)
 {
     return wp_ready;
+}
+void WP_SetReady(uint8_t r)
+{
+    wp_ready = r;
 }

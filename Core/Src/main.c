@@ -28,6 +28,7 @@
 #include "serialManager.h"
 #include "wpManager.h"
 #include <stdio.h>
+#include "wpStorage.h"
 
 /* USER CODE END Includes */
 
@@ -113,6 +114,13 @@ int main(void)
   MX_USART2_UART_Init();
   SM_Init(&huart2);
   SH1106_Init();
+  WP_Reset();
+  if (WP_LoadFromFlash()) {
+      WP_SetReady(1);
+      displayScreen("WP Loaded");
+  } else {
+      displayScreen("No Saved WP");
+  }
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -203,16 +211,24 @@ void StartSMTask(void *argument)
           SM_SendString("FALSE\n");
         }
       }
-      else
-      {
-        // 2) Diğer satırlar WP ise wp manager'a ver
-        WP_ProcessLine(line);
-      }
+      else if (strcmp(line, "READ") == 0) {
+             if (WP_LoadFromFlash()) {
+            	 WP_SetReady(1);
+            	 WP_SendAllToQt();             // aşağıda yazacağım
+             } else {
+            	 SM_SendString("WP_BEGIN,0\nWP_END\n");
+             }
+           }
+           else {
+             // WP upload satırları
+             WP_ProcessLine(line);
+           }
     }
 
     osDelay(5);
   }
 }
+
 
 
 

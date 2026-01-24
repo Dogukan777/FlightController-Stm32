@@ -23,5 +23,9 @@ extern volatile uint8_t  wp_receiving;
 void WP_Reset(void);
 void WP_ProcessLine(const char *line);
 uint8_t WP_IsReady(void);
+void WP_SetReady(uint8_t r);
+void WP_SendAllToQt(void);
+
+
 
 #endif
