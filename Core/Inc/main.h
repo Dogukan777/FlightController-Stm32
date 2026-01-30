@@ -54,7 +54,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void displayScreen(const char *str);
-
+void displayTwoLines(const char *top, const char *bottom);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

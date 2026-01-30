@@ -49,10 +49,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c2;
 
 UART_HandleTypeDef huart2;
 
-/* Definitions for defaultTask */
+
+/* USER CODE BEGIN PV */
 osThreadId_t SMTaskHandle;
 osThreadId_t UploadedWPTaskHandle;
 
@@ -68,8 +70,8 @@ const osThreadAttr_t UploadedWPTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
 };
-
-/* USER CODE BEGIN PV */
+void StartSMTask(void *argument);
+void StartUploadedWPTask(void *argument);
 
 /* USER CODE END PV */
 
@@ -78,9 +80,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_I2C2_Init(void);
 
-void StartSMTask(void *argument);
-void StartUploadedWPTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -124,21 +125,32 @@ int main(void)
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+
+
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  displayScreen("Booting...");
+
   /* USER CODE BEGIN 2 */
+  HAL_Init();
+  SystemClock_Config();
+
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_I2C2_Init();
+  MX_USART2_UART_Init();
+
+  SM_Init(&huart2);
+  SH1106_Init();
+  WP_Reset();
+  displayScreen("Booting...");
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
-  SMTaskHandle = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
-  UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -159,9 +171,10 @@ int main(void)
   /* Create the thread(s) */
   /* creation of defaultTask */
 
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  SMTaskHandle = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
+  UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -178,12 +191,11 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
   }
-
-
-
 }
-  /* USER CODE BEGIN 3 */
+
 void StartSMTask(void *argument)
 {
   (void)argument;
@@ -298,9 +310,6 @@ void displayTwoLines(const char *top, const char *bottom)
   if (osKernelGetState() == osKernelRunning) osDelay(5);
   else HAL_Delay(5);
 }
-
-
-
 /* USER CODE END 3 */
 
 /**
@@ -379,6 +388,40 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C2_Init(void)
+{
+
+  /* USER CODE BEGIN I2C2_Init 0 */
+
+  /* USER CODE END I2C2_Init 0 */
+
+  /* USER CODE BEGIN I2C2_Init 1 */
+
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -442,7 +485,16 @@ static void MX_GPIO_Init(void)
   * @retval None
   */
 /* USER CODE END Header_StartDefaultTask */
-
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
