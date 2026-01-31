@@ -29,6 +29,7 @@
 #include "wpManager.h"
 #include <stdio.h>
 #include "wpStorage.h"
+#include "gyroscope.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +58,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 osThreadId_t SMTaskHandle;
 osThreadId_t UploadedWPTaskHandle;
+osThreadId_t gyroTaskHandle;
 
 /* --- Task Attributes --- */
 const osThreadAttr_t SMTask_attributes = {
@@ -70,8 +72,16 @@ const osThreadAttr_t UploadedWPTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
 };
+const osThreadAttr_t gyroTask_attributes = {
+  .name = "gyroTask",
+  .stack_size = 256 * 4,                 // 1KB
+  .priority = (osPriority_t) osPriorityNormal,
+};
+
 void StartSMTask(void *argument);
 void StartUploadedWPTask(void *argument);
+void StartGyroTask(void *argument);
+volatile uint8_t data_stream_enabled = 0;
 
 /* USER CODE END PV */
 
@@ -107,21 +117,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
 
-  /* USER CODE BEGIN Init */
-  MX_GPIO_Init();
-  MX_I2C1_Init();
-  MX_USART2_UART_Init();
-  SM_Init(&huart2);
-  SH1106_Init();
-  WP_Reset();
-  if (WP_LoadFromFlash()) {
-      WP_SetReady(1);
-      displayScreen("WP Loaded");
-  } else {
-      displayScreen("No Saved WP");
-  }
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -142,10 +138,16 @@ int main(void)
   MX_I2C1_Init();
   MX_I2C2_Init();
   MX_USART2_UART_Init();
-
+  GYRO_Init(&hi2c2);
   SM_Init(&huart2);
   SH1106_Init();
   WP_Reset();
+  if (WP_LoadFromFlash()) {
+      WP_SetReady(1);
+      displayScreen("WP Loaded");
+  } else {
+      displayScreen("No Saved WP");
+  }
   displayScreen("Booting...");
   /* USER CODE END 2 */
 
@@ -175,6 +177,8 @@ int main(void)
   /* add threads, ... */
   SMTaskHandle = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
   UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
+  gyroTaskHandle = osThreadNew(StartGyroTask, NULL, &gyroTask_attributes);
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -206,7 +210,6 @@ void StartSMTask(void *argument)
   {
     while (SM_ReadLine(line, sizeof(line)) > 0)
     {
-      // 1) CONNECT/DISCONNECT satırlarını burada handle et
       if (strcmp(line, "CONNECT") == 0)
       {
         if (sm_connected == 0) {
@@ -226,15 +229,25 @@ void StartSMTask(void *argument)
       else if (strcmp(line, "READ") == 0) {
              if (WP_LoadFromFlash()) {
             	 WP_SetReady(1);
-            	 WP_SendAllToQt();             // aşağıda yazacağım
+            	 WP_SendAllToQt();
              } else {
             	 SM_SendString("WP_BEGIN,0\nWP_END\n");
              }
-           }
-           else {
+      }
+      else if (strcmp(line, "DATA") == 0)
+      {
+          data_stream_enabled = 1;
+          SM_SendString("DATA_BEGIN\n");
+      }
+      else if (strcmp(line, "DATA_STOP") == 0)
+      {
+          data_stream_enabled = 0;
+          SM_SendString("DATA_END\n");
+      }
+      else {
              // WP upload satırları
              WP_ProcessLine(line);
-           }
+      }
     }
 
     osDelay(5);
@@ -269,7 +282,7 @@ void StartUploadedWPTask(void *argument)
                "LAT:%0.7f",
                wp_list[showIdx].lat);
 
-      displayTwoLines(top, bottom);
+      //displayTwoLines(top, bottom);
 
       showIdx++;
       osDelay(2000);
@@ -280,6 +293,46 @@ void StartUploadedWPTask(void *argument)
   }
 }
 
+void StartGyroTask(void *argument)
+{
+  (void)argument;
+
+  MPU6050_Raw raw;
+  char line[96];
+
+  const uint32_t period_ms = 10;
+  uint32_t last = osKernelGetTickCount();
+
+  for (;;)
+  {
+    if (!data_stream_enabled) {
+      osDelay(20);
+      continue;
+    }
+
+    if (GYRO_ReadRaw(&hi2c2, &raw))
+    {
+      // CSV format: DATA,ax,ay,az,gx,gy,gz
+      int n = snprintf(line, sizeof(line),
+                       "DATA,%d,%d,%d,%d,%d,%d\n",
+                       (int)raw.ax, (int)raw.ay, (int)raw.az,
+                       (int)raw.gx, (int)raw.gy, (int)raw.gz);
+
+      if (n > 0) {
+        SM_SendString(line);
+      }
+    }
+    else
+    {
+      SM_SendString("DATA_ERR\n");
+    }
+
+    uint32_t now = osKernelGetTickCount();
+    uint32_t elapsed = now - last;
+    if (elapsed < period_ms) osDelay(period_ms - elapsed);
+    last = osKernelGetTickCount();
+  }
+}
 
 
 

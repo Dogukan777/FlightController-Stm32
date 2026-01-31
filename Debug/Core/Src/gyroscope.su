@@ -1,0 +1,7 @@
+../Core/Src/gyroscope.c:23:16:write_reg	32	static
+../Core/Src/gyroscope.c:29:16:read_regs	40	static
+../Core/Src/gyroscope.c:35:9:GYRO_Init	24	static
+../Core/Src/gyroscope.c:67:9:GYRO_ReadRaw	32	static
+../Core/Src/gyroscope.c:83:6:GYRO_Convert	16	static
+../Core/Src/gyroscope.c:98:6:GYRO_PrintToOLED	88	static
+../Core/Src/gyroscope.c:132:6:GYRO_PrintXYZRawToOLED	16	static
