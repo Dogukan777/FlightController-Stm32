@@ -22,15 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ssd1306.h"
-#include "SH1106.h"
-#include "fonts.h"
-#include "serialManager.h"
-#include "wpManager.h"
-#include <stdio.h>
-#include "wpStorage.h"
-#include "gyroscope.h"
-
+#include "controlPPM.h"
+#include "flightcontroller.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,7 +34,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+volatile uint32_t tim2_ic_cnt = 0;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,36 +46,19 @@
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+
 UART_HandleTypeDef huart2;
 
-
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* USER CODE BEGIN PV */
-osThreadId_t SMTaskHandle;
-osThreadId_t UploadedWPTaskHandle;
-osThreadId_t gyroTaskHandle;
-
-/* --- Task Attributes --- */
-const osThreadAttr_t SMTask_attributes = {
-  .name = "SMTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
-const osThreadAttr_t UploadedWPTask_attributes = {
-  .name = "UploadedWPTask",
-  .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityBelowNormal,
-};
-const osThreadAttr_t gyroTask_attributes = {
-  .name = "gyroTask",
-  .stack_size = 256 * 4,                 // 1KB
-  .priority = (osPriority_t) osPriorityNormal,
-};
-
-void StartSMTask(void *argument);
-void StartUploadedWPTask(void *argument);
-void StartGyroTask(void *argument);
-volatile uint8_t data_stream_enabled = 0;
 
 /* USER CODE END PV */
 
@@ -91,7 +68,9 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C2_Init(void);
-
+static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
+void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -117,38 +96,28 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
-
-
+  SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-
-  /* USER CODE BEGIN 2 */
-  HAL_Init();
-  SystemClock_Config();
-
   MX_GPIO_Init();
   MX_I2C1_Init();
-  MX_I2C2_Init();
   MX_USART2_UART_Init();
-  GYRO_Init(&hi2c2);
-  SM_Init(&huart2);
-  SH1106_Init();
-  WP_Reset();
-  if (WP_LoadFromFlash()) {
-      WP_SetReady(1);
-      displayScreen("WP Loaded");
-  } else {
-      displayScreen("No Saved WP");
-  }
-  displayScreen("Booting...");
+  MX_I2C2_Init();
+  MX_TIM2_Init();
+  MX_TIM3_Init();
+  /* USER CODE BEGIN 2 */
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -167,17 +136,16 @@ int main(void)
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
+  flightController_Init();
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  SMTaskHandle = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
-  UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
-  gyroTaskHandle = osThreadNew(StartGyroTask, NULL, &gyroTask_attributes);
 
   /* USER CODE END RTOS_THREADS */
 
@@ -200,170 +168,44 @@ int main(void)
   }
 }
 
-void StartSMTask(void *argument)
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
-  (void)argument;
-
-  char line[128];
-
-  for (;;)
+  if (htim->Instance == TIM2 && htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
   {
-    while (SM_ReadLine(line, sizeof(line)) > 0)
+	tim2_ic_cnt++;
+    uint32_t cap = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+
+    uint32_t diff;
+    if (cap >= last_cap) diff = cap - last_cap;
+    else diff = (0xFFFFFFFFu - last_cap + cap + 1u);
+
+    last_cap = cap;
+    if (diff == 0) return;
+
+    /* Sync gap -> new frame */
+    if (diff > PPM_SYNC_US)
     {
-      if (strcmp(line, "CONNECT") == 0)
-      {
-        if (sm_connected == 0) {
-          sm_connected = 1;
-          displayScreen("Connect");
-          SM_SendString("TRUE\n");
-        }
-      }
-      else if (strcmp(line, "DISCONNECT") == 0)
-      {
-        if (sm_connected == 1) {
-          sm_connected = 0;
-          displayScreen("Disconnect");
-          SM_SendString("FALSE\n");
-        }
-      }
-      else if (strcmp(line, "READ") == 0) {
-             if (WP_LoadFromFlash()) {
-            	 WP_SetReady(1);
-            	 WP_SendAllToQt();
-             } else {
-            	 SM_SendString("WP_BEGIN,0\nWP_END\n");
-             }
-      }
-      else if (strcmp(line, "DATA") == 0)
-      {
-          data_stream_enabled = 1;
-          SM_SendString("DATA_BEGIN\n");
-      }
-      else if (strcmp(line, "DATA_STOP") == 0)
-      {
-          data_stream_enabled = 0;
-          SM_SendString("DATA_END\n");
-      }
-      else {
-             // WP upload satırları
-             WP_ProcessLine(line);
-      }
+      ch_idx = 0;
+      ppm_ch_count = 0;
+      return;
     }
 
-    osDelay(5);
+    /* Channel pulse width */
+    if (diff >= PPM_PULSE_MIN_US && diff <= PPM_PULSE_MAX_US)
+    {
+      if (ch_idx < PPM_CH_MAX)
+      {
+        ppm_ch[ch_idx] = (uint16_t)diff;
+        ch_idx++;
+        ppm_ch_count = ch_idx;
+        ppm_last_ms = HAL_GetTick();
+      }
+    }
   }
 }
 
+  /* USER CODE END 3 */
 
-
-
-void StartUploadedWPTask(void *argument)
-{
-  (void)argument;
-
-  static uint16_t showIdx = 0;
-  char top[32];
-  char bottom[32];
-
-  for (;;)
-  {
-    if (WP_IsReady() && wp_count > 0)
-    {
-      if (showIdx >= wp_count) showIdx = 0;
-
-      // Üst: WP sayısı ve index
-      snprintf(top, sizeof(top),
-               "WP %u/%u",
-               (unsigned)(showIdx + 1),
-               (unsigned)wp_count);
-
-      // Alt: LAT
-      snprintf(bottom, sizeof(bottom),
-               "LAT:%0.7f",
-               wp_list[showIdx].lat);
-
-      //displayTwoLines(top, bottom);
-
-      showIdx++;
-      osDelay(2000);
-      continue;
-    }
-
-    osDelay(50);
-  }
-}
-
-void StartGyroTask(void *argument)
-{
-  (void)argument;
-
-  MPU6050_Raw raw;
-  char line[96];
-
-  const uint32_t period_ms = 10;
-  uint32_t last = osKernelGetTickCount();
-
-  for (;;)
-  {
-    if (!data_stream_enabled) {
-      osDelay(20);
-      continue;
-    }
-
-    if (GYRO_ReadRaw(&hi2c2, &raw))
-    {
-      // CSV format: DATA,ax,ay,az,gx,gy,gz
-      int n = snprintf(line, sizeof(line),
-                       "DATA,%d,%d,%d,%d,%d,%d\n",
-                       (int)raw.ax, (int)raw.ay, (int)raw.az,
-                       (int)raw.gx, (int)raw.gy, (int)raw.gz);
-
-      if (n > 0) {
-        SM_SendString(line);
-      }
-    }
-    else
-    {
-      SM_SendString("DATA_ERR\n");
-    }
-
-    uint32_t now = osKernelGetTickCount();
-    uint32_t elapsed = now - last;
-    if (elapsed < period_ms) osDelay(period_ms - elapsed);
-    last = osKernelGetTickCount();
-  }
-}
-
-
-
-void displayScreen(const char *str)
-{
-  SH1106_Clear();
-  SH1106_GotoXY(5, 5);
-  SH1106_Puts((char*)str, &Font_7x10, 1);
-  SH1106_UpdateScreen();
-
-  if (osKernelGetState() == osKernelRunning) osDelay(5);
-  else HAL_Delay(5);
-}
-void displayTwoLines(const char *top, const char *bottom)
-{
-  SH1106_Clear();
-
-  // Üst satır
-  SH1106_GotoXY(5, 5);
-  SH1106_Puts((char*)top, &Font_7x10, 1);
-
-  // Alt satır
-  SH1106_GotoXY(5, 30);
-  SH1106_Puts((char*)bottom, &Font_7x10, 1);
-
-  SH1106_UpdateScreen();
-
-  if (osKernelGetState() == osKernelRunning) osDelay(5);
-  else HAL_Delay(5);
-}
-/* USER CODE END 3 */
 
 /**
   * @brief System Clock Configuration
@@ -471,6 +313,103 @@ static void MX_I2C2_Init(void)
   /* USER CODE BEGIN I2C2_Init 2 */
 
   /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_IC_InitTypeDef sConfigIC = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 15;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 4294967295;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
+  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
+  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
+  sConfigIC.ICFilter = 0;
+  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 15;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 19999;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 800;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
 
 }
 

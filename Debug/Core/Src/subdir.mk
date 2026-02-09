@@ -6,12 +6,14 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Core/Src/SH1106.c \
+../Core/Src/bldcMotor.c \
+../Core/Src/controlPPM.c \
+../Core/Src/flightController.c \
 ../Core/Src/fonts.c \
 ../Core/Src/freertos.c \
 ../Core/Src/gyroscope.c \
 ../Core/Src/main.c \
 ../Core/Src/serialManager.c \
-../Core/Src/ssd1306.c \
 ../Core/Src/stm32f4xx_hal_msp.c \
 ../Core/Src/stm32f4xx_it.c \
 ../Core/Src/syscalls.c \
@@ -22,12 +24,14 @@ C_SRCS += \
 
 C_DEPS += \
 ./Core/Src/SH1106.d \
+./Core/Src/bldcMotor.d \
+./Core/Src/controlPPM.d \
+./Core/Src/flightController.d \
 ./Core/Src/fonts.d \
 ./Core/Src/freertos.d \
 ./Core/Src/gyroscope.d \
 ./Core/Src/main.d \
 ./Core/Src/serialManager.d \
-./Core/Src/ssd1306.d \
 ./Core/Src/stm32f4xx_hal_msp.d \
 ./Core/Src/stm32f4xx_it.d \
 ./Core/Src/syscalls.d \
@@ -38,12 +42,14 @@ C_DEPS += \
 
 OBJS += \
 ./Core/Src/SH1106.o \
+./Core/Src/bldcMotor.o \
+./Core/Src/controlPPM.o \
+./Core/Src/flightController.o \
 ./Core/Src/fonts.o \
 ./Core/Src/freertos.o \
 ./Core/Src/gyroscope.o \
 ./Core/Src/main.o \
 ./Core/Src/serialManager.o \
-./Core/Src/ssd1306.o \
 ./Core/Src/stm32f4xx_hal_msp.o \
 ./Core/Src/stm32f4xx_it.o \
 ./Core/Src/syscalls.o \
@@ -60,7 +66,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/SH1106.cyclo ./Core/Src/SH1106.d ./Core/Src/SH1106.o ./Core/Src/SH1106.su ./Core/Src/fonts.cyclo ./Core/Src/fonts.d ./Core/Src/fonts.o ./Core/Src/fonts.su ./Core/Src/freertos.cyclo ./Core/Src/freertos.d ./Core/Src/freertos.o ./Core/Src/freertos.su ./Core/Src/gyroscope.cyclo ./Core/Src/gyroscope.d ./Core/Src/gyroscope.o ./Core/Src/gyroscope.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/serialManager.cyclo ./Core/Src/serialManager.d ./Core/Src/serialManager.o ./Core/Src/serialManager.su ./Core/Src/ssd1306.cyclo ./Core/Src/ssd1306.d ./Core/Src/ssd1306.o ./Core/Src/ssd1306.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/wpManager.cyclo ./Core/Src/wpManager.d ./Core/Src/wpManager.o ./Core/Src/wpManager.su ./Core/Src/wpStorage.cyclo ./Core/Src/wpStorage.d ./Core/Src/wpStorage.o ./Core/Src/wpStorage.su
+	-$(RM) ./Core/Src/SH1106.cyclo ./Core/Src/SH1106.d ./Core/Src/SH1106.o ./Core/Src/SH1106.su ./Core/Src/bldcMotor.cyclo ./Core/Src/bldcMotor.d ./Core/Src/bldcMotor.o ./Core/Src/bldcMotor.su ./Core/Src/controlPPM.cyclo ./Core/Src/controlPPM.d ./Core/Src/controlPPM.o ./Core/Src/controlPPM.su ./Core/Src/flightController.cyclo ./Core/Src/flightController.d ./Core/Src/flightController.o ./Core/Src/flightController.su ./Core/Src/fonts.cyclo ./Core/Src/fonts.d ./Core/Src/fonts.o ./Core/Src/fonts.su ./Core/Src/freertos.cyclo ./Core/Src/freertos.d ./Core/Src/freertos.o ./Core/Src/freertos.su ./Core/Src/gyroscope.cyclo ./Core/Src/gyroscope.d ./Core/Src/gyroscope.o ./Core/Src/gyroscope.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/serialManager.cyclo ./Core/Src/serialManager.d ./Core/Src/serialManager.o ./Core/Src/serialManager.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/wpManager.cyclo ./Core/Src/wpManager.d ./Core/Src/wpManager.o ./Core/Src/wpManager.su ./Core/Src/wpStorage.cyclo ./Core/Src/wpStorage.d ./Core/Src/wpStorage.o ./Core/Src/wpStorage.su
 
 .PHONY: clean-Core-2f-Src
 
