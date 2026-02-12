@@ -1,6 +1,6 @@
 ../Core/Src/flightController.c:33:6:flightController_Init	8	static
 ../Core/Src/flightController.c:49:6:displayTwoLines	16	static
 ../Core/Src/flightController.c:67:6:StartPPMTask	16	static
-../Core/Src/flightController.c:82:6:StartSMTask	144	static
-../Core/Src/flightController.c:139:6:StartUploadedWPTask	88	static
-../Core/Src/flightController.c:175:6:StartGyroTask	192	static
+../Core/Src/flightController.c:81:6:StartSMTask	16	static
+../Core/Src/flightController.c:93:6:StartUploadedWPTask	88	static
+../Core/Src/flightController.c:129:6:StartGyroTask	192	static

@@ -16,9 +16,10 @@ static uint8_t connectMatchIndex = 0;
 static volatile uint8_t gotConnectFlag = 0;
 static volatile uint8_t gotDisconnectFlag = 0;
 static volatile uint8_t sm_connected = 0;
+extern volatile uint8_t data_stream_enabled;
 // Başlatma: huart2 adresini ver
 void SM_Init(UART_HandleTypeDef *huart);
-
+void SM_Start();
 // Gönderme (string)
 HAL_StatusTypeDef SM_SendString(const char *s);
 

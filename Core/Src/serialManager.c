@@ -57,6 +57,51 @@ void SM_Init(UART_HandleTypeDef *huart)
     HAL_UART_Receive_IT(g_huart, &rxByte, 1);
 }
 
+void SM_Start(){
+	 char line[128];
+	 while (SM_ReadLine(line, sizeof(line)) > 0)
+	    {
+	      if (strcmp(line, "CONNECT") == 0)
+	      {
+	        if (sm_connected == 0) {
+	          sm_connected = 1;
+	          displayScreen("Connect");
+	          SM_SendString("TRUE\n");
+	        }
+	      }
+	      else if (strcmp(line, "DISCONNECT") == 0)
+	      {
+	        if (sm_connected == 1) {
+	          sm_connected = 0;
+	          displayScreen("Disconnect");
+	          SM_SendString("FALSE\n");
+	        }
+	      }
+	      else if (strcmp(line, "READ") == 0) {
+	             if (WP_LoadFromFlash()) {
+	            	 WP_SetReady(1);
+	            	 WP_SendAllToQt();
+	             } else {
+	            	 SM_SendString("WP_BEGIN,0\nWP_END\n");
+	             }
+	      }
+	      else if (strcmp(line, "DATA") == 0)
+	      {
+	          data_stream_enabled = 1;
+	          SM_SendString("DATA_BEGIN\n");
+	      }
+	      else if (strcmp(line, "DATA_STOP") == 0)
+	      {
+	          data_stream_enabled = 0;
+	          SM_SendString("DATA_END\n");
+	      }
+	      else {
+	             // WP upload satırları
+	             WP_ProcessLine(line);
+	      }
+	    }
+}
+
 uint8_t SM_GotDisconnect(void)
 {
     if (gotDisconnectFlag) {

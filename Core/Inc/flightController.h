@@ -20,7 +20,7 @@ void flightController_Init(void);
 void displayScreen(const char *str);
 void displayTwoLines(const char *top, const char *bottom);
 
-extern volatile uint8_t data_stream_enabled;
+
 
 extern osThreadId_t SMTaskHandle;
 extern osThreadId_t UploadedWPTaskHandle;
