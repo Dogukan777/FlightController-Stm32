@@ -4,6 +4,7 @@
 "./Core/Src/flightController.o"
 "./Core/Src/fonts.o"
 "./Core/Src/freertos.o"
+"./Core/Src/gpsSystem.o"
 "./Core/Src/gyroscope.o"
 "./Core/Src/main.o"
 "./Core/Src/serialManager.o"

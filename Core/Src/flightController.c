@@ -1,10 +1,12 @@
 #include "flightController.h"
 #include "controlPPM.h"
+#include "gpsSystem.h"
 
 osThreadId_t SMTaskHandle;
 osThreadId_t UploadedWPTaskHandle;
 osThreadId_t gyroTaskHandle;
 osThreadId_t ppmTaskHandle;
+osThreadId_t gpsTaskHandle;
 volatile uint8_t data_stream_enabled = 0;
 
 const osThreadAttr_t SMTask_attributes = {
@@ -29,20 +31,26 @@ const osThreadAttr_t ppmTask_attributes = {
   .stack_size = 256 * 4,                 // 1KB yeter
   .priority = (osPriority_t) osPriorityHigh, // ESC kontrol daha öncelikli olsun
 };
+const osThreadAttr_t gpsTask_attributes = {
+  .name = "GPSTask",
+  .stack_size = 256 * 4,                 // 1KB yeter
+  .priority = (osPriority_t) osPriorityHigh, // ESC kontrol daha öncelikli olsun
+};
 
 void flightController_Init()
 {
-  GYRO_Init(&hi2c2);
+  //GYRO_Init(&hi2c2);
   SM_Init(&huart2);
   SH1106_Init();
 
   controlPPM_Init();
 
-
+  displayTwoLines("MErhaba","Dünya");
   ppmTaskHandle = osThreadNew(StartPPMTask, NULL, &ppmTask_attributes);
   SMTaskHandle         = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
   UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
-  gyroTaskHandle       = osThreadNew(StartGyroTask, NULL, &gyroTask_attributes);
+  //gyroTaskHandle       = osThreadNew(StartGyroTask, NULL, &gyroTask_attributes);
+  gpsTaskHandle       = osThreadNew(StartGPSTask, NULL, &gpsTask_attributes);
 }
 
 
@@ -64,6 +72,48 @@ void displayTwoLines(const char *top, const char *bottom)
   else HAL_Delay(5);
 }
 
+
+void StartGPSTask(void *argument)
+{
+  (void)argument;
+
+  // UART1 handle’ın hazır olduğundan emin olduğun yerde çağır:
+  gpsSystem_Init(&huart1);
+
+  GPS_Data d;
+  uint32_t last_oled = 0;
+
+  for (;;)
+  {
+    gpsSystem_TaskStep();
+
+    // OLED’i 5ms’de bir değil, örn 500ms’de bir güncelle
+    uint32_t now = osKernelGetTickCount();
+    if (now - last_oled >= 500)
+    {
+      last_oled = now;
+
+      gpsSystem_Get(&d);
+
+      char top[32], bottom[32];
+
+      if (d.fix == 0) {
+        snprintf(top, sizeof(top), "NO FIX S:%d", d.sats);
+        snprintf(bottom, sizeof(bottom), "WAIT...");
+      } else {
+        snprintf(top, sizeof(top), "LAT:%0.7f", d.lat);
+        snprintf(bottom, sizeof(bottom), "LON:%0.7f", d.lon);
+      }
+
+      displayTwoLines(top, bottom);
+    }
+
+    osDelay(5);
+  }
+}
+
+
+
 void StartPPMTask(void *argument)
 {
   (void)argument;
@@ -84,6 +134,8 @@ void StartSMTask(void *argument)
   for (;;)
   {
 	  SM_Start();
+	  SM_GpsStreamTick();  // GPS stream gönder
+	  osDelay(5);
   }
 }
 

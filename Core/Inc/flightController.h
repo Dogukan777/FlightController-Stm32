@@ -14,6 +14,7 @@ void StartSMTask(void *argument);
 void StartUploadedWPTask(void *argument);
 void StartGyroTask(void *argument);
 void StartPPMTask(void *argument);
+void StartGPSTask(void *argument);
 
 void flightController_Init(void);
 
@@ -32,5 +33,5 @@ extern I2C_HandleTypeDef hi2c2;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
 extern UART_HandleTypeDef huart2;
-
+extern UART_HandleTypeDef huart1;
 #endif /* INC_FLIGHTCONTROLLER_H_ */
