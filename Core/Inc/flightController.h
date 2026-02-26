@@ -32,6 +32,7 @@ extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim3;
+extern UART_HandleTypeDef huart6;
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart1;
 #endif /* INC_FLIGHTCONTROLLER_H_ */

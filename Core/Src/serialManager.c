@@ -2,7 +2,7 @@
 #include <string.h>
 #include "gpsSystem.h"
 #include <stdio.h>
-// ---- Ayarlar ----
+#include "cmsis_os2.h"
 #define SM_RX_BUF_SIZE 256
 
 static UART_HandleTypeDef *g_huart = NULL;
@@ -11,7 +11,7 @@ static UART_HandleTypeDef *g_huart = NULL;
 static volatile uint8_t  rxBuf[SM_RX_BUF_SIZE];
 static volatile uint16_t rxHead = 0;
 static volatile uint16_t rxTail = 0;
-// serialManager.c
+
 volatile uint8_t gps_stream_enabled = 0;
 
 // Interrupt ile tek byte alma değişkeni
@@ -56,11 +56,12 @@ void SM_Init(UART_HandleTypeDef *huart)
     gotDisconnectFlag = 0;
     sm_connected = 0;
 
+
     // RX interrupt ile 1 byte almaya başla
     HAL_UART_Receive_IT(g_huart, &rxByte, 1);
 }
 
-void SM_Start(){
+void SM_Start(GPS_Data *out){
     char line[128];
 
     while (SM_ReadLine(line, sizeof(line)) > 0)
@@ -95,12 +96,10 @@ void SM_Start(){
         else if (strcmp(line, "GPS") == 0)
         {
             gps_stream_enabled = 1;
-            SM_SendString("GPS_BEGIN\n");
         }
         else if (strcmp(line, "GPS_STOP") == 0)
         {
             gps_stream_enabled = 0;
-            SM_SendString("GPS_END\n");
         }
         else if (strcmp(line, "DATA") == 0)
         {
@@ -117,31 +116,6 @@ void SM_Start(){
             WP_ProcessLine(line);
         }
     }
-}
-void SM_GpsStreamTick(void)
-{
-    static uint32_t last_ms = 0;
-    const uint32_t period_ms = 10; // 5 Hz
-
-    if (!sm_connected) return;
-    if (!gps_stream_enabled) return;
-
-    uint32_t now = HAL_GetTick();
-    if ((now - last_ms) < period_ms) return;
-    last_ms = now;
-
-    GPS_Data d;
-    gpsSystem_Get(&d);
-
-    char msg[128];
-    if (d.fix == 0) {
-        snprintf(msg, sizeof(msg), "GPS,NOFIX,%d\n", d.sats);
-    } else {
-        snprintf(msg, sizeof(msg), "GPS,%.6f,%.6f,%d,%d\n",
-                 d.lat, d.lon, d.fix, d.sats);
-    }
-
-    SM_SendString(msg);
 }
 
 
