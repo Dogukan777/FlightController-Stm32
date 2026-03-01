@@ -72,32 +72,34 @@ void displayTwoLines(const char *top, const char *bottom)
   else HAL_Delay(5);
 }
 
-void GPSTask(GPS_Data d){
+/*void GPSTask(GPS_Data *d)
+{
+    gpsSystem_TaskStep();
+    gpsSystem_Get(d);
 
-	gpsSystem_TaskStep();
-	gpsSystem_Get(&d);
-    char top[32], bottom[32];
-    /*if (d.fix == 0) {
-    	snprintf(top, sizeof(top), "NO FIX S:%d", d.sats);
-	    snprintf(bottom, sizeof(bottom), "WAIT...");
-	} else {
-	    snprintf(top, sizeof(top), "LAT:%0.7f", d.lat);
-	    snprintf(bottom, sizeof(bottom), "LON:%0.7f", d.lon);
-	}
-	displayTwoLines(top, bottom);*/
+    if (SM_IsConnected() && gps_stream_enabled) {
+        char msg[128];
+        if (d->fix == 0) snprintf(msg, sizeof(msg), "GPS,NOFIX,%d\n", d->sats);
+        else snprintf(msg, sizeof(msg),
+            "GPS,%.7f,%.7f,%.1f,%.1f,%d,%d\n",
+            d->lat, d->lon, d->alt, d->spd_kmh, d->fix, d->sats);
+        SM_SendString(msg);
+    }
+}*/
+void GPSTask(GPS_Data *d)
+{
+    gpsSystem_TaskStep();
+    gpsSystem_Get(d);
 
-	 if (SM_IsConnected() && gps_stream_enabled)
-	 {
-		 char msg[128];
-		 if (d.fix == 0) {
-			 snprintf(msg, sizeof(msg), "GPS,NOFIX,%d\n", d.sats);
-		 } else {
-		     snprintf(msg, sizeof(msg), "GPS,%.7f,%.7f,%f,%f,	%d,%d\n", d.lat, d.lon,d.alt,d.spd_kmh, d.fix, d.sats);
-	     }
-		 SM_SendString(msg);
-	 }
+    if (SM_IsConnected() && gps_stream_enabled) {
+        char msg[128];
+
+      snprintf(msg, sizeof(msg),
+            "GPS,%.7f,%.7f,%.1f,%.1f,%d,%d\n",
+            d->lat, d->lon, d->alt, d->spd_kmh, d->fix, d->sats);
+        SM_SendString(msg);
+    }
 }
-
 
 
 
@@ -125,7 +127,7 @@ void StartSMTask(void *argument)
 
   for (;;)
   {
-	  GPSTask(d);
+	  GPSTask(&d);
 	  SM_Start();
 	  osDelay(5);
   }
