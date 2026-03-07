@@ -1,8 +1,8 @@
 ../Core/Src/wpManager.c:13:6:WP_Reset	1
 ../Core/Src/wpManager.c:21:13:WP_OnBegin	1
-../Core/Src/wpManager.c:29:13:WP_OnEnd	1
-../Core/Src/wpManager.c:37:16:WP_ParseCsv	3
-../Core/Src/wpManager.c:68:6:WP_ProcessLine	14
-../Core/Src/wpManager.c:110:6:WP_SendAllToQt	2
+../Core/Src/wpManager.c:29:13:WP_OnEnd	2
+../Core/Src/wpManager.c:39:16:WP_ParseCsv	3
+../Core/Src/wpManager.c:70:6:WP_ProcessLine	14
+../Core/Src/wpManager.c:112:6:WP_SendAllToQt	2
 ../Core/Src/wpManager.c:137:9:WP_IsReady	1
 ../Core/Src/wpManager.c:141:6:WP_SetReady	1

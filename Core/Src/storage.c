@@ -1,4 +1,4 @@
-#include "wpStorage.h"
+#include <storage.h>
 #include "stm32f4xx_hal.h"
 #include <string.h>
 
@@ -20,6 +20,7 @@ typedef struct {
   int32_t dist_cm;
   int32_t rad_cm;
   char status[STATUS_LEN];
+  uint8_t pad[ (4 - (STATUS_LEN % 4)) % 4 ];
 } WpPacked;
 
 static uint32_t sector_to_addr(uint32_t sector)
@@ -65,23 +66,22 @@ void WP_EraseFlash(void)
 
 uint8_t WP_SaveToFlash(void)
 {
-  if (wp_count == 0 || wp_count > WP_MAX_SAVE) return 0;
+  if (wp_count > WP_MAX_SAVE) return 0;
 
-  // 1) Pakete çevir
+  // 1) Her durumda flash'ı temizle (overwrite garantisi)
+  WP_EraseFlash();
+
+  // 2) Header hazırla
   WpHeader hdr;
   hdr.magic = WP_MAGIC;
   hdr.count = (uint16_t)wp_count;
   hdr.reserved = 0;
-
-  // 2) Flash sector erase
-  WP_EraseFlash();
 
   // 3) Yaz
   HAL_FLASH_Unlock();
 
   uint32_t addr = WP_FLASH_ADDR;
 
-  // Header yaz (word word)
   if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, hdr.magic) != HAL_OK) goto fail;
   addr += 4;
 
@@ -89,10 +89,16 @@ uint8_t WP_SaveToFlash(void)
   if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, secondWord) != HAL_OK) goto fail;
   addr += 4;
 
+  // Eğer wp_count == 0 ise burada bitir: eski kayıtlar artık yok
+  if (hdr.count == 0) {
+    HAL_FLASH_Lock();
+    return 1;
+  }
+
+  // 4) Waypointleri yaz
   for (uint16_t i = 0; i < hdr.count; i++)
   {
     WpPacked p;
-    // double -> fixed
     p.lat_e7  = (int32_t)(wp_list[i].lat * 10000000.0);
     p.lon_e7  = (int32_t)(wp_list[i].lon * 10000000.0);
     p.alt_cm  = (int32_t)(wp_list[i].alt * 100.0);
@@ -101,7 +107,6 @@ uint8_t WP_SaveToFlash(void)
     memset(p.status, 0, STATUS_LEN);
     strncpy(p.status, wp_list[i].status, STATUS_LEN - 1);
 
-    // struct’ı 4-byte aligned word olarak yaz
     const uint32_t *w = (const uint32_t*)&p;
     for (uint32_t k = 0; k < sizeof(WpPacked)/4; k++) {
       if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, w[k]) != HAL_OK) goto fail;

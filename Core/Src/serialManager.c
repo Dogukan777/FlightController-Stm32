@@ -3,7 +3,10 @@
 #include "gpsSystem.h"
 #include <stdio.h>
 #include "cmsis_os2.h"
+#include "wpManager.h"
+#include "storage.h"
 #define SM_RX_BUF_SIZE 256
+#define SM_TIMEOUT_MS 2000
 
 static UART_HandleTypeDef *g_huart = NULL;
 
@@ -16,6 +19,7 @@ volatile uint8_t gps_stream_enabled = 0;
 
 // Interrupt ile tek byte alma değişkeni
 static uint8_t rxByte = 0;
+static uint32_t last_rx_tick = 0;
 
 // "Connect" tespit için küçük state
 
@@ -55,61 +59,41 @@ void SM_Init(UART_HandleTypeDef *huart)
     disconnectMatchIndex = 0;
     gotDisconnectFlag = 0;
     sm_connected = 0;
-
-
-    // RX interrupt ile 1 byte almaya başla
+    last_rx_tick = HAL_GetTick();
     HAL_UART_Receive_IT(g_huart, &rxByte, 1);
 }
 
 void SM_Start(GPS_Data *out){
-    char line[128];
 
+	SM_CheckTimeout();
+
+    char line[128];
     while (SM_ReadLine(line, sizeof(line)) > 0)
     {
-        if (strcmp(line, "CONNECT") == 0)
+    	if (strcmp(line, "CONNECT") == 0)
+    	{
+    	    SM_SendString("TRUE\n");
+    	    sm_connected = 1;
+
+    	    if (WP_LoadFromFlash()) {
+    	        WP_SetReady(1);
+    	        WP_SendAllToQt();
+    	    }
+
+    	    data_stream_enabled = 1;
+    	    gps_stream_enabled = 1;
+    	}
+        else if (strcmp(line, "DISCONNECT") == 0 )
         {
-            if (sm_connected == 0) {
-                sm_connected = 1;
-                displayScreen("Connect");
-                SM_SendString("TRUE\n");
-            }
-        }
-        else if (strcmp(line, "DISCONNECT") == 0)
-        {
-            if (sm_connected == 1) {
-                sm_connected = 0;
-                displayScreen("Disconnect");
-                SM_SendString("FALSE\n");
-            }
+
+            SM_SendString("FALSE\n");
+            sm_connected = 0;
             gps_stream_enabled = 0;
             data_stream_enabled = 0;
         }
-        else if (strcmp(line, "READ") == 0)
+        else if (strcmp(line, "PING") == 0)
         {
-            if (WP_LoadFromFlash()) {
-                WP_SetReady(1);
-                WP_SendAllToQt();
-            } else {
-                SM_SendString("WP_BEGIN,0\nWP_END\n");
-            }
-        }
-        else if (strcmp(line, "GPS") == 0)
-        {
-            gps_stream_enabled = 1;
-        }
-        else if (strcmp(line, "GPS_STOP") == 0)
-        {
-            gps_stream_enabled = 0;
-        }
-        else if (strcmp(line, "DATA") == 0)
-        {
-            data_stream_enabled = 1;
-            SM_SendString("DATA_BEGIN\n");
-        }
-        else if (strcmp(line, "DATA_STOP") == 0)
-        {
-            data_stream_enabled = 0;
-            SM_SendString("DATA_END\n");
+            last_rx_tick = HAL_GetTick();
         }
         else {
             // WP upload satırları
@@ -203,12 +187,26 @@ uint8_t SM_GotConnect(void)
     }
     return 0;
 }
-
+void SM_CheckTimeout(void)
+{
+    if (sm_connected) {
+        uint32_t now = HAL_GetTick();
+        if ((now - last_rx_tick) > SM_TIMEOUT_MS) {
+            sm_connected = 0;
+            gps_stream_enabled = 0;
+            data_stream_enabled = 0;
+            gotConnectFlag = 0;
+            gotDisconnectFlag = 0;
+            connectMatchIndex = 0;
+            disconnectMatchIndex = 0;
+        }
+    }
+}
 // Bu fonksiyonu stm32f4xx_it.c içindeki HAL_UART_RxCpltCallback'ten çağıracağız
 void SM_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (!g_huart || huart != g_huart) return;
-
+    last_rx_tick = HAL_GetTick();
     // Gelen byte:
     uint8_t b = rxByte;
 

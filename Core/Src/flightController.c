@@ -39,17 +39,17 @@ const osThreadAttr_t gpsTask_attributes = {
 
 void flightController_Init()
 {
-  //GYRO_Init(&hi2c2);
+  GYRO_Init(&hi2c2);
   SM_Init(&huart6);
   SH1106_Init();
   gpsSystem_Init(&huart1);
   controlPPM_Init();
 
-  displayTwoLines("MErhaba","Dünya");
+  //displayTwoLines("MErhaba","Dünya");
   ppmTaskHandle = osThreadNew(StartPPMTask, NULL, &ppmTask_attributes);
   SMTaskHandle         = osThreadNew(StartSMTask, NULL, &SMTask_attributes);
   UploadedWPTaskHandle = osThreadNew(StartUploadedWPTask, NULL, &UploadedWPTask_attributes);
-  //gyroTaskHandle       = osThreadNew(StartGyroTask, NULL, &gyroTask_attributes);
+  gyroTaskHandle       = osThreadNew(StartGyroTask, NULL, &gyroTask_attributes);
 
 }
 
@@ -72,20 +72,6 @@ void displayTwoLines(const char *top, const char *bottom)
   else HAL_Delay(5);
 }
 
-/*void GPSTask(GPS_Data *d)
-{
-    gpsSystem_TaskStep();
-    gpsSystem_Get(d);
-
-    if (SM_IsConnected() && gps_stream_enabled) {
-        char msg[128];
-        if (d->fix == 0) snprintf(msg, sizeof(msg), "GPS,NOFIX,%d\n", d->sats);
-        else snprintf(msg, sizeof(msg),
-            "GPS,%.7f,%.7f,%.1f,%.1f,%d,%d\n",
-            d->lat, d->lon, d->alt, d->spd_kmh, d->fix, d->sats);
-        SM_SendString(msg);
-    }
-}*/
 void GPSTask(GPS_Data *d)
 {
     gpsSystem_TaskStep();
@@ -95,8 +81,8 @@ void GPSTask(GPS_Data *d)
         char msg[128];
 
       snprintf(msg, sizeof(msg),
-            "GPS,%.7f,%.7f,%.1f,%.1f,%d,%d\n",
-            d->lat, d->lon, d->alt, d->spd_kmh, d->fix, d->sats);
+            "GPS,%.7f,%.7f,%.1f,%.1f,%d,%d,%.7f\n",
+            d->lat, d->lon, d->alt, d->spd_kmh, d->fix, d->sats,d->cog_deg);
         SM_SendString(msg);
     }
 }
@@ -161,58 +147,47 @@ void StartUploadedWPTask(void *argument)
                "LAT:%0.7f",
                wp_list[showIdx].lat);
 
-      displayTwoLines(top, bottom);
+      //displayTwoLines(top, bottom);
 
       showIdx++;
-      osDelay(2000);
-      continue;
+      //osDelay(1000);
+      //continue;
     }
 
-    osDelay(50);
   }
 }
 
 void StartGyroTask(void *argument)
 {
-  (void)argument;
+    (void)argument;
 
-  MPU6050_Raw raw;
-  char line[96];
+    MPU6050_Raw raw;
+    char line[96];
 
-  const uint32_t period_ms = 10;
-  uint32_t last = osKernelGetTickCount();
-
-  for (;;)
-  {
-    if (!data_stream_enabled) {
-      osDelay(20);
-      continue;
-    }
-
-    if (GYRO_ReadRaw(&hi2c2, &raw))
+    for (;;)
     {
-      // CSV format: DATA,ax,ay,az,gx,gy,gz
-      int n = snprintf(line, sizeof(line),
-                       "DATA,%d,%d,%d,%d,%d,%d\n",
-                       (int)raw.ax, (int)raw.ay, (int)raw.az,
-                       (int)raw.gx, (int)raw.gy, (int)raw.gz);
+        if (!data_stream_enabled) {
+            osDelay(10);
+            continue;
+        }
 
-      if (n > 0) {
-        SM_SendString(line);
-      }
-    }
-    else
-    {
-      SM_SendString("DATA_ERR\n");
-    }
+        if (GYRO_ReadRaw(&hi2c2, &raw))
+        {
+            int n = snprintf(line, sizeof(line),
+                             "DATA,%d,%d,%d,%d,%d,%d\n",
+                             (int)raw.ax, (int)raw.ay, (int)raw.az,
+                             (int)raw.gx, (int)raw.gy, (int)raw.gz);
 
-    uint32_t now = osKernelGetTickCount();
-    uint32_t elapsed = now - last;
-    if (elapsed < period_ms) osDelay(period_ms - elapsed);
-    last = osKernelGetTickCount();
-  }
+            if (n > 0) {
+                SM_SendString(line);
+            }
+        }
+        else
+        {
+            SM_SendString("DATA_ERR\n");
+        }
+    }
 }
-
 
 
 

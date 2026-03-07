@@ -43,7 +43,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Core/Inc/controlPPM.h ../Core/Inc/flightcontroller.h \
  ../Core/Inc/SH1106.h ../Core/Inc/main.h ../Core/Inc/fonts.h \
  ../Core/Inc/serialManager.h ../Core/Inc/wpManager.h \
- ../Core/Inc/wpStorage.h ../Core/Inc/gyroscope.h \
+ ../Core/Inc/storage.h ../Core/Inc/gyroscope.h \
  ../Core/Inc/serialManager.h ../Core/Inc/gpsSystem.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -94,7 +94,7 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/fonts.h:
 ../Core/Inc/serialManager.h:
 ../Core/Inc/wpManager.h:
-../Core/Inc/wpStorage.h:
+../Core/Inc/storage.h:
 ../Core/Inc/gyroscope.h:
 ../Core/Inc/serialManager.h:
 ../Core/Inc/gpsSystem.h:

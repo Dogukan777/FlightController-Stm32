@@ -2,7 +2,7 @@
 #include "serialManager.h"
 #include <string.h>
 #include <stdio.h>
-#include "wpStorage.h"
+#include <storage.h>
 
 Waypoint wp_list[MAX_WP];
 volatile uint16_t wp_count = 0;
@@ -30,7 +30,9 @@ static void WP_OnEnd(void)
 {
     wp_receiving = 0;
     wp_ready = 1;
-    WP_SaveToFlash();
+    if (WP_SaveToFlash()) SM_SendString("WP_SAVED\n");
+    else SM_SendString("WP_SAVE_FAIL\n");
+
 }
 
 // CSV satır parse: WP,lat,lon,alt,dist,radius,"status"
@@ -117,7 +119,7 @@ void WP_SendAllToQt(void)
 
     for (uint16_t i = 0; i < wp_count; i++) {
 
-        // status tırnak içinde gitsin
+
         snprintf(out, sizeof(out),
                  "WP,%.7f,%.7f,%.2f,%.2f,%.2f,\"%s\"\n",
                  wp_list[i].lat,
@@ -128,8 +130,6 @@ void WP_SendAllToQt(void)
                  wp_list[i].status);
 
         SM_SendString(out);
-
-        osDelay(2); // UART buffer taşmasın diye küçük nefes
     }
 
     SM_SendString("WP_END\n");

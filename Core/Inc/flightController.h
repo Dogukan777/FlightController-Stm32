@@ -5,7 +5,7 @@
 #include "serialManager.h"
 #include "wpManager.h"
 #include <stdio.h>
-#include "wpStorage.h"
+#include <storage.h>
 #include "gyroscope.h"
 #include "cmsis_os.h"
 

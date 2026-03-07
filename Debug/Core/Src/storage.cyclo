@@ -1,0 +1,4 @@
+../Core/Src/storage.c:26:17:sector_to_addr	9
+../Core/Src/storage.c:50:6:WP_EraseFlash	1
+../Core/Src/storage.c:67:9:WP_SaveToFlash	8
+../Core/Src/storage.c:125:9:WP_LoadFromFlash	5

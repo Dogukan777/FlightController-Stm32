@@ -44,6 +44,7 @@ uint8_t SM_IsConnected(void);
 // "Connect" geldi mi? (case-sensitive)
 uint8_t SM_GotConnect(void);
 void SM_GpsStreamTick(void);
+void SM_CheckTimeout(void);
 
 // UART RX interrupt callback içinde çağır
 void SM_RxCpltCallback(UART_HandleTypeDef *huart);

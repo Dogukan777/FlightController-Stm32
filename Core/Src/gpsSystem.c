@@ -15,6 +15,7 @@ static char nmea_last[128];
 
 // paylaşılan GPS state (task okuyacak)
 static volatile double g_lat = 0.0, g_lon = 0.0, g_alt = 0.0, g_spd = 0.0;
+static volatile double g_cog = 0.0;
 static volatile int    g_fix = 0,   g_sats = 0;
 static volatile char   g_rmc_status = 'V';
 
@@ -50,15 +51,21 @@ static int nmea_degmin_to_dec(const char* dm, char hemi, double* out_deg)
   return 1;
 }
 
-static int parse_rmc(const char* line, double* lat, double* lon, double* speed_kmh, char* status)
+static int parse_rmc(const char* line,
+                     double* lat, double* lon,
+                     double* speed_kmh,
+                     double* cog_deg,
+                     char* status)
 {
-  char st[4], lat_s[20], ns[4], lon_s[20], ew[4], spd_s[16];
+  char st[4], lat_s[20], ns[4], lon_s[20], ew[4], spd_s[16], cog_s[16];
 
   if (!nmea_get_field(line, 2, st, sizeof(st))) return 0;
   *status = st[0];
 
   if (*status != 'A') {
-    *lat = 0.0; *lon = 0.0; *speed_kmh = 0.0;
+    *lat = 0.0; *lon = 0.0;
+    *speed_kmh = 0.0;
+    *cog_deg = 0.0;
     return 1;
   }
 
@@ -66,13 +73,17 @@ static int parse_rmc(const char* line, double* lat, double* lon, double* speed_k
   nmea_get_field(line, 4, ns, sizeof(ns));
   nmea_get_field(line, 5, lon_s, sizeof(lon_s));
   nmea_get_field(line, 6, ew, sizeof(ew));
+
   nmea_get_field(line, 7, spd_s, sizeof(spd_s)); // knots
+  nmea_get_field(line, 8, cog_s, sizeof(cog_s)); // course over ground (deg)
 
   nmea_degmin_to_dec(lat_s, ns[0], lat);
   nmea_degmin_to_dec(lon_s, ew[0], lon);
 
   double spd_knots = atof(spd_s);
   *speed_kmh = spd_knots * 1.852;
+
+  *cog_deg = (cog_s[0] ? atof(cog_s) : 0.0);
   return 1;
 }
 
@@ -148,6 +159,20 @@ void gpsSystem_OnRxByte(uint8_t b)
     }
   }
 }
+int parse_vtg(const char* line, double* cog_deg, double* spd_kmh)
+{
+  char cog_s[16], spd_k_s[16];
+
+  // field 1: course (true)
+  // field 7: speed (km/h)
+  if (!nmea_get_field(line, 1, cog_s, sizeof(cog_s))) return 0;
+  if (!nmea_get_field(line, 7, spd_k_s, sizeof(spd_k_s))) return 0;
+
+  if (cog_s[0]) *cog_deg = atof(cog_s);
+  if (spd_k_s[0]) *spd_kmh = atof(spd_k_s);
+
+  return 1;
+}
 
 // Task içinde sürekli çağır: “hazır satır” varsa parse eder
 void gpsSystem_TaskStep(void)
@@ -170,14 +195,23 @@ void gpsSystem_TaskStep(void)
   }
   else if (!strncmp(nmea_last, "$GNRMC", 6) || !strncmp(nmea_last, "$GPRMC", 6))
   {
-    double lat=0.0, lon=0.0, spd=0.0;
+    double lat=0.0, lon=0.0, spd=0.0, cog=0.0;
     char st='V';
 
-    if (parse_rmc(nmea_last, &lat, &lon, &spd, &st))
+    if (parse_rmc(nmea_last, &lat, &lon, &spd, &cog, &st))
     {
       g_rmc_status = st;
       g_spd = spd;
+      g_cog = cog;
       if (st == 'A') { g_lat = lat; g_lon = lon; }
+    }
+  }
+  else if (!strncmp(nmea_last, "$GNVTG", 6) || !strncmp(nmea_last, "$GPVTG", 6))
+  {
+    double cog=0.0, spd=0.0;
+    if (parse_vtg(nmea_last, &cog, &spd)) {
+      g_cog = cog;
+      g_spd = spd; // istersen
     }
   }
 
@@ -195,6 +229,7 @@ void gpsSystem_Get(GPS_Data *out)
   out->lon = g_lon;
   out->alt = g_alt;
   out->spd_kmh = g_spd;
+  out->cog_deg = g_cog;
   out->fix = g_fix;
   out->sats = g_sats;
   out->rmc_status = g_rmc_status;

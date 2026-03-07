@@ -1,7 +1,7 @@
 ../Core/Src/flightController.c:40:6:flightController_Init	1
 ../Core/Src/flightController.c:57:6:displayTwoLines	2
-../Core/Src/flightController.c:89:6:GPSTask	3
-../Core/Src/flightController.c:107:6:StartPPMTask	1
-../Core/Src/flightController.c:122:6:StartSMTask	1
-../Core/Src/flightController.c:139:6:StartUploadedWPTask	4
-../Core/Src/flightController.c:175:6:StartGyroTask	5
+../Core/Src/flightController.c:75:6:GPSTask	3
+../Core/Src/flightController.c:93:6:StartPPMTask	1
+../Core/Src/flightController.c:108:6:StartSMTask	1
+../Core/Src/flightController.c:125:6:StartUploadedWPTask	4
+../Core/Src/flightController.c:160:6:StartGyroTask	4

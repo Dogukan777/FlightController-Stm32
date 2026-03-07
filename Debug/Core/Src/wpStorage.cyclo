@@ -1,4 +1,0 @@
-../Core/Src/wpStorage.c:25:17:sector_to_addr	9
-../Core/Src/wpStorage.c:49:6:WP_EraseFlash	1
-../Core/Src/wpStorage.c:66:9:WP_SaveToFlash	8
-../Core/Src/wpStorage.c:120:9:WP_LoadFromFlash	5

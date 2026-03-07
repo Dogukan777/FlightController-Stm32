@@ -10,6 +10,7 @@ typedef struct {
   double lon;
   double alt;
   double spd_kmh;
+  double cog_deg;
   int    fix;
   int    sats;
   char   rmc_status; // 'A' or 'V'
