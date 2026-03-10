@@ -79,7 +79,8 @@ void SM_Start(GPS_Data *out){
     	        WP_SetReady(1);
     	        WP_SendAllToQt();
     	    }
-
+    	    SM_SendString("Setting loaded\n");
+    	    Settings_SendToQt();
     	    data_stream_enabled = 1;
     	    gps_stream_enabled = 1;
     	}
@@ -94,6 +95,14 @@ void SM_Start(GPS_Data *out){
         else if (strcmp(line, "PING") == 0)
         {
             last_rx_tick = HAL_GetTick();
+        }
+        else if (strncmp(line, "SETTINGS,", 9) == 0)
+        {
+        	if (Settings_HandleCommand(line)) {
+        		SM_SendString("SETTINGS_OK\n");
+            } else {
+                SM_SendString("SETTINGS_FAIL\n");
+            }
         }
         else {
             // WP upload satırları

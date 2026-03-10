@@ -1,4 +1,7 @@
-../Core/Src/storage.c:26:17:sector_to_addr	16	static
-../Core/Src/storage.c:50:6:WP_EraseFlash	32	static
-../Core/Src/storage.c:67:9:WP_SaveToFlash	112	static
-../Core/Src/storage.c:125:9:WP_LoadFromFlash	96	static
+../Core/Src/storage.c:44:17:sector_to_addr	16	static
+../Core/Src/storage.c:68:6:WP_EraseFlash	32	static
+../Core/Src/storage.c:85:9:WP_SaveToFlash	112	static
+../Core/Src/storage.c:143:9:WP_LoadFromFlash	96	static
+../Core/Src/storage.c:182:6:Settings_EraseFlash	32	static
+../Core/Src/storage.c:199:9:Settings_SaveToFlash	80	static
+../Core/Src/storage.c:245:9:Settings_LoadFromFlash	40	static

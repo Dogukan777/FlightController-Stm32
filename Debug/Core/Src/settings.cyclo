@@ -1,0 +1,6 @@
+../Core/Src/settings.c:14:6:Settings_Init	2
+../Core/Src/settings.c:44:6:Settings_SendToQt	1
+../Core/Src/settings.c:59:9:Settings_ParseLine	4
+../Core/Src/settings.c:88:16:Settings_GetServo	2
+../Core/Src/settings.c:96:9:Settings_HandleCommand	5
+../Core/Src/settings.c:118:6:Settings_PrintAllOLED	2

@@ -6,6 +6,9 @@
 #define WP_FLASH_ADDR     0x08060000U
 #define WP_MAGIC          0x57504C54u // 'WPLT'
 #define WP_MAX_SAVE       MAX_WP
+#define SETTINGS_FLASH_SECTOR   FLASH_SECTOR_6
+#define SETTINGS_FLASH_ADDR     0x08040000U
+#define SETTINGS_MAGIC          0x53545447u   // 'STTG'
 
 typedef struct {
   uint32_t magic;
@@ -22,6 +25,21 @@ typedef struct {
   char status[STATUS_LEN];
   uint8_t pad[ (4 - (STATUS_LEN % 4)) % 4 ];
 } WpPacked;
+
+typedef struct {
+  uint32_t magic;
+  uint16_t count;
+  uint16_t reserved;
+} SettingsHeader;
+
+typedef struct {
+  uint16_t id;
+  uint16_t max;
+  uint16_t min;
+  uint16_t inst;
+} ServoPacked;
+
+
 
 static uint32_t sector_to_addr(uint32_t sector)
 {
@@ -158,5 +176,95 @@ uint8_t WP_LoadFromFlash(void)
   // hazır
   // wp_ready wpManager.c içinde static; onu setlemek için fonksiyon ekleyelim:
   // WP_SetReady(1);
+  return 1;
+}
+
+void Settings_EraseFlash(void)
+{
+  HAL_FLASH_Unlock();
+
+  FLASH_EraseInitTypeDef erase = {0};
+  uint32_t sectorError = 0;
+
+  erase.TypeErase    = FLASH_TYPEERASE_SECTORS;
+  erase.VoltageRange = FLASH_VOLTAGE_RANGE_3;
+  erase.Sector       = SETTINGS_FLASH_SECTOR;
+  erase.NbSectors    = 1;
+
+  HAL_FLASHEx_Erase(&erase, &sectorError);
+
+  HAL_FLASH_Lock();
+}
+
+uint8_t Settings_SaveToFlash(void)
+{
+  Settings_EraseFlash();
+
+  SettingsHeader hdr;
+  hdr.magic = SETTINGS_MAGIC;
+  hdr.count = 4;
+  hdr.reserved = 0;
+
+  HAL_FLASH_Unlock();
+
+  uint32_t addr = SETTINGS_FLASH_ADDR;
+
+  if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, hdr.magic) != HAL_OK) goto fail;
+  addr += 4;
+
+  uint32_t secondWord = ((uint32_t)hdr.count) | (((uint32_t)hdr.reserved) << 16);
+  if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, secondWord) != HAL_OK) goto fail;
+  addr += 4;
+
+  for (uint16_t i = 0; i < 4; i++)
+  {
+    ServoPacked p;
+    p.id   = g_settings.servo[i].id;
+    p.max  = g_settings.servo[i].max;
+    p.min  = g_settings.servo[i].min;
+    p.inst = g_settings.servo[i].inst;
+
+    uint32_t word1 = ((uint32_t)p.id) | (((uint32_t)p.max) << 16);
+    uint32_t word2 = ((uint32_t)p.min) | (((uint32_t)p.inst) << 16);
+
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, word1) != HAL_OK) goto fail;
+    addr += 4;
+
+    if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, addr, word2) != HAL_OK) goto fail;
+    addr += 4;
+  }
+
+  HAL_FLASH_Lock();
+  return 1;
+
+fail:
+  HAL_FLASH_Lock();
+  return 0;
+}
+
+uint8_t Settings_LoadFromFlash(void)
+{
+  const uint32_t *mem = (const uint32_t*)SETTINGS_FLASH_ADDR;
+
+  uint32_t magic = mem[0];
+  if (magic != SETTINGS_MAGIC) return 0;
+
+  uint32_t word1 = mem[1];
+  uint16_t count = (uint16_t)(word1 & 0xFFFFu);
+  if (count != 4) return 0;
+
+  const uint32_t *ptr = (const uint32_t*)(SETTINGS_FLASH_ADDR + 8);
+
+  for (uint16_t i = 0; i < 4; i++)
+  {
+    uint32_t w1 = *ptr++;
+    uint32_t w2 = *ptr++;
+
+    g_settings.servo[i].id   = (uint16_t)(w1 & 0xFFFFu);
+    g_settings.servo[i].max  = (uint16_t)((w1 >> 16) & 0xFFFFu);
+    g_settings.servo[i].min  = (uint16_t)(w2 & 0xFFFFu);
+    g_settings.servo[i].inst = (uint16_t)((w2 >> 16) & 0xFFFFu);
+  }
+
   return 1;
 }

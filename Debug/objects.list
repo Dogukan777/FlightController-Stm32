@@ -8,6 +8,7 @@
 "./Core/Src/gyroscope.o"
 "./Core/Src/main.o"
 "./Core/Src/serialManager.o"
+"./Core/Src/settings.o"
 "./Core/Src/stm32f4xx_hal_msp.o"
 "./Core/Src/stm32f4xx_it.o"
 "./Core/Src/storage.o"

@@ -1,6 +1,7 @@
 #include "flightController.h"
 #include "controlPPM.h"
 #include "gpsSystem.h"
+#include "settings.h"
 
 osThreadId_t SMTaskHandle;
 osThreadId_t UploadedWPTaskHandle;
@@ -44,6 +45,7 @@ void flightController_Init()
   SH1106_Init();
   gpsSystem_Init(&huart1);
   controlPPM_Init();
+  Settings_Init();
 
   //displayTwoLines("MErhaba","Dünya");
   ppmTaskHandle = osThreadNew(StartPPMTask, NULL, &ppmTask_attributes);
@@ -58,18 +60,16 @@ void displayTwoLines(const char *top, const char *bottom)
 {
   SH1106_Clear();
 
-  // Üst satır
   SH1106_GotoXY(5, 5);
   SH1106_Puts((char*)top, &Font_7x10, 1);
 
-  // Alt satır
   SH1106_GotoXY(5, 30);
   SH1106_Puts((char*)bottom, &Font_7x10, 1);
 
   SH1106_UpdateScreen();
 
-  if (osKernelGetState() == osKernelRunning) osDelay(5);
-  else HAL_Delay(5);
+  if (osKernelGetState() == osKernelRunning) osDelay(1000);
+  else HAL_Delay(1000);
 }
 
 void GPSTask(GPS_Data *d)
@@ -186,6 +186,7 @@ void StartGyroTask(void *argument)
         {
             SM_SendString("DATA_ERR\n");
         }
+
     }
 }
 

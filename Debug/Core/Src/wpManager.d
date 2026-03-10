@@ -30,7 +30,7 @@ Core/Src/wpManager.o: ../Core/Src/wpManager.c ../Core/Inc/wpManager.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/storage.h ../Core/Inc/wpManager.h
+ ../Core/Inc/storage.h ../Core/Inc/wpManager.h ../Core/Inc/settings.h
 ../Core/Inc/wpManager.h:
 ../Core/Inc/serialManager.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -65,3 +65,4 @@ Core/Src/wpManager.o: ../Core/Src/wpManager.c ../Core/Inc/wpManager.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
 ../Core/Inc/storage.h:
 ../Core/Inc/wpManager.h:
+../Core/Inc/settings.h:
