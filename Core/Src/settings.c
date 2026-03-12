@@ -34,12 +34,13 @@ void Settings_Init(void)
 	g_settings.servo[3].inst = 1500;
 
 	if (Settings_LoadFromFlash()) {
-		displayTwoLines("SETTINGS", "LOADED");
-	    Settings_PrintAllOLED();
+		//displayTwoLines("SETTINGS", "LOADED");
+	    //Settings_PrintAllOLED();
 	} else {
-	    displayTwoLines("SETTINGS", "DEFAULT");
-	    Settings_PrintAllOLED();
+	    //displayTwoLines("SETTINGS", "DEFAULT");
+	    //Settings_PrintAllOLED();
 	}
+	Servo_StartAllAndApply();
 }
 void Settings_SendToQt(void)
 {
@@ -106,6 +107,12 @@ uint8_t Settings_HandleCommand(const char *line)
         return 0;
     }
 
+    Servo_ApplyByIndex(0);
+    Servo_ApplyByIndex(1);
+    Servo_ApplyByIndex(2);
+    Servo_ApplyByIndex(3);
+
+
     if (Settings_SaveToFlash()) {
         displayTwoLines("SETTINGS", "SAVED");
     } else {
@@ -115,6 +122,50 @@ uint8_t Settings_HandleCommand(const char *line)
 
     return 1;
 }
+
+
+uint32_t Settings_GetTimChannel(uint8_t index)
+{
+    switch (index) {
+        case 0: return TIM_CHANNEL_1; // servo1
+        case 1: return TIM_CHANNEL_2; // servo2
+        case 2: return TIM_CHANNEL_3; // servo3
+        case 3: return TIM_CHANNEL_4; // servo4
+        default: return TIM_CHANNEL_1;
+    }
+}
+void Servo_ApplyByIndex(uint8_t index)
+{
+    if (index >= 4) return;
+
+    ServoSetting_t s = g_settings.servo[index];
+    uint16_t pulse = Settings_Clamp(s.inst, s.min, s.max);
+    uint32_t channel = Settings_GetTimChannel(index);
+
+    __HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
+}
+void Servo_StartAllAndApply(void)
+{
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+
+    Servo_ApplyByIndex(0);
+    Servo_ApplyByIndex(1);
+    Servo_ApplyByIndex(2);
+    Servo_ApplyByIndex(3);
+}
+uint16_t Settings_Clamp(uint16_t value, uint16_t min, uint16_t max)
+{
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
+
+
+
+
 void Settings_PrintAllOLED(void)
 {
     char top[32];

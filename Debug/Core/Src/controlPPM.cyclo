@@ -1,5 +1,8 @@
 ../Core/Src/controlPPM.c:19:6:controlPPM_Init	1
-../Core/Src/controlPPM.c:30:6:controlPPM_Start	8
-../Core/Src/controlPPM.c:49:6:ESC_WriteUs	3
-../Core/Src/controlPPM.c:59:9:ppm_to_percent	3
-../Core/Src/controlPPM.c:65:6:displayScreen	2
+../Core/Src/controlPPM.c:32:6:controlPPM_Start	8
+../Core/Src/controlPPM.c:58:6:ESC_WriteUs	3
+../Core/Src/controlPPM.c:67:9:ppm_to_percent	3
+../Core/Src/controlPPM.c:76:10:percent_to_pwm	3
+../Core/Src/controlPPM.c:84:6:Servo_UpdateFromPitch	1
+../Core/Src/controlPPM.c:96:6:Servo_UpdateFromRoll	1
+../Core/Src/controlPPM.c:110:6:Servo_UpdateFromYaw	1

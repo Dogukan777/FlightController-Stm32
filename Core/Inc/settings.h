@@ -28,6 +28,11 @@ uint8_t Settings_HandleCommand(const char *line);
 void Settings_PrintAllOLED(void);
 void Settings_SendToQt(void);
 
+uint16_t Settings_Clamp(uint16_t value, uint16_t min, uint16_t max);
+uint32_t Settings_GetTimChannel(uint8_t index);
+void Servo_ApplyByIndex(uint8_t index);
+void Servo_StartAllAndApply(void);
+
 #ifdef __cplusplus
 }
 #endif

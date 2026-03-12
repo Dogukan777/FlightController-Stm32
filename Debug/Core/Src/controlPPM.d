@@ -43,7 +43,8 @@ Core/Src/controlPPM.o: ../Core/Src/controlPPM.c ../Core/Inc/main.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
  ../Core/Inc/flightController.h ../Core/Inc/SH1106.h ../Core/Inc/main.h \
  ../Core/Inc/fonts.h ../Core/Inc/serialManager.h ../Core/Inc/wpManager.h \
- ../Core/Inc/storage.h ../Core/Inc/settings.h ../Core/Inc/gyroscope.h
+ ../Core/Inc/storage.h ../Core/Inc/settings.h ../Core/Inc/gyroscope.h \
+ ../Core/Inc/settings.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -96,3 +97,4 @@ Core/Src/controlPPM.o: ../Core/Src/controlPPM.c ../Core/Inc/main.h \
 ../Core/Inc/storage.h:
 ../Core/Inc/settings.h:
 ../Core/Inc/gyroscope.h:
+../Core/Inc/settings.h:

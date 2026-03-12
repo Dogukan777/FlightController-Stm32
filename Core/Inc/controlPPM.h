@@ -25,5 +25,12 @@ void controlPPM_Init(void);
 void controlPPM_Start(void);
 void ESC_WriteUs(uint16_t us);
 int16_t ppm_to_percent(uint16_t us);
+uint16_t percent_to_pwm(int16_t percent);
+
+void Servo_UpdateFromPitch(void);
+void Servo_UpdateFromYaw(void);
+void Servo_UpdateFromRoll(void);
+
+
 
 #endif

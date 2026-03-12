@@ -41,7 +41,7 @@ const osThreadAttr_t gpsTask_attributes = {
 void flightController_Init()
 {
   GYRO_Init(&hi2c2);
-  SM_Init(&huart6);
+  SM_Init(&huart2);
   SH1106_Init();
   gpsSystem_Init(&huart1);
   controlPPM_Init();
@@ -98,7 +98,7 @@ void StartPPMTask(void *argument)
   for (;;)
   {
 	  controlPPM_Start();
-	  osDelay(5);
+	  osDelay(1);
   }
 }
 

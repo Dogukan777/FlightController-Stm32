@@ -1,6 +1,10 @@
 ../Core/Src/settings.c:14:6:Settings_Init	8	static
-../Core/Src/settings.c:44:6:Settings_SendToQt	288	static
-../Core/Src/settings.c:59:9:Settings_ParseLine	112	static
-../Core/Src/settings.c:88:16:Settings_GetServo	24	static
-../Core/Src/settings.c:96:9:Settings_HandleCommand	16	static
-../Core/Src/settings.c:118:6:Settings_PrintAllOLED	96	static
+../Core/Src/settings.c:45:6:Settings_SendToQt	288	static
+../Core/Src/settings.c:60:9:Settings_ParseLine	112	static
+../Core/Src/settings.c:89:16:Settings_GetServo	24	static
+../Core/Src/settings.c:97:9:Settings_HandleCommand	16	static
+../Core/Src/settings.c:127:10:Settings_GetTimChannel	16	static
+../Core/Src/settings.c:137:6:Servo_ApplyByIndex	32	static
+../Core/Src/settings.c:147:6:Servo_StartAllAndApply	8	static
+../Core/Src/settings.c:159:10:Settings_Clamp	16	static
+../Core/Src/settings.c:169:6:Settings_PrintAllOLED	96	static
