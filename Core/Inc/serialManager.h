@@ -4,6 +4,7 @@
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
 #include <stddef.h>
+#include "flightController.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,6 +18,11 @@ typedef struct {
 typedef struct {
     ServoSetting_t servo[4];
 } SettingsPacket_t;
+typedef struct {
+    TIM_HandleTypeDef* htim;
+    uint32_t channel;
+} ServoTimMap_t;
+
 
 extern SettingsPacket_t g_settings;
 
@@ -32,6 +37,9 @@ uint16_t Settings_Clamp(uint16_t value, uint16_t min, uint16_t max);
 uint32_t Settings_GetTimChannel(uint8_t index);
 void Servo_ApplyByIndex(uint8_t index);
 void Servo_StartAllAndApply(void);
+uint16_t Settings_MapPercentToServo(uint8_t index, int16_t percent);
+void Servo_WriteByIndex(uint8_t index, uint16_t pwm);
+ServoTimMap_t Settings_GetTim(uint8_t index);
 
 #ifdef __cplusplus
 }

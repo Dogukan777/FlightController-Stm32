@@ -1,0 +1,4 @@
+../Core/Src/stepMotor.c:5:13:delay_us	32	static
+../Core/Src/stepMotor.c:21:6:StepMotor_Init	8	static
+../Core/Src/stepMotor.c:29:6:StepMotor_Step	24	static
+../Core/Src/stepMotor.c:61:6:StepMotor_RotateAngle	24	static

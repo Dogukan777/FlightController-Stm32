@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "serialManager.h"
 
 // ====== INTERNALS ======
 static UART_HandleTypeDef *gps_huart = NULL;
@@ -13,11 +14,12 @@ static volatile uint8_t  nmea_ready = 0;
 static volatile uint8_t  nmea_sync  = 0;
 static char nmea_last[128];
 
-// paylaşılan GPS state (task okuyacak)
+// paylaşılan GPS state
 static volatile double g_lat = 0.0, g_lon = 0.0, g_alt = 0.0, g_spd = 0.0;
 static volatile double g_cog = 0.0;
 static volatile int    g_fix = 0,   g_sats = 0;
 static volatile char   g_rmc_status = 'V';
+static volatile uint32_t g_last_rx_time = 0;
 
 // ---- helpers ----
 static int nmea_get_field(const char* s, int field_index, char* out, int out_sz)
@@ -74,8 +76,8 @@ static int parse_rmc(const char* line,
   nmea_get_field(line, 5, lon_s, sizeof(lon_s));
   nmea_get_field(line, 6, ew, sizeof(ew));
 
-  nmea_get_field(line, 7, spd_s, sizeof(spd_s)); // knots
-  nmea_get_field(line, 8, cog_s, sizeof(cog_s)); // course over ground (deg)
+  nmea_get_field(line, 7, spd_s, sizeof(spd_s));
+  nmea_get_field(line, 8, cog_s, sizeof(cog_s));
 
   nmea_degmin_to_dec(lat_s, ns[0], lat);
   nmea_degmin_to_dec(lon_s, ew[0], lon);
@@ -115,6 +117,19 @@ static int parse_gga(const char* line, double* lat, double* lon, double* alt_m, 
   return 1;
 }
 
+int parse_vtg(const char* line, double* cog_deg, double* spd_kmh)
+{
+  char cog_s[16], spd_k_s[16];
+
+  if (!nmea_get_field(line, 1, cog_s, sizeof(cog_s))) return 0;
+  if (!nmea_get_field(line, 7, spd_k_s, sizeof(spd_k_s))) return 0;
+
+  if (cog_s[0]) *cog_deg = atof(cog_s);
+  if (spd_k_s[0]) *spd_kmh = atof(spd_k_s);
+
+  return 1;
+}
+
 // ====== PUBLIC ======
 void gpsSystem_Init(UART_HandleTypeDef *huart)
 {
@@ -127,7 +142,6 @@ void gpsSystem_Init(UART_HandleTypeDef *huart)
   HAL_UART_Receive_IT(gps_huart, (uint8_t*)&gps_rx_ch, 1);
 }
 
-// Bu fonksiyon UART callback içinden çağrılacak
 void gpsSystem_OnRxByte(uint8_t b)
 {
   char c = (char)b;
@@ -159,25 +173,14 @@ void gpsSystem_OnRxByte(uint8_t b)
     }
   }
 }
-int parse_vtg(const char* line, double* cog_deg, double* spd_kmh)
+
+// GÜNCELLENDİ: Yeni paket parse edildiyse 1, edilmediyse 0 döner
+uint8_t gpsSystem_TaskStep(void)
 {
-  char cog_s[16], spd_k_s[16];
+  if (!nmea_ready) return 0; // Henüz yeni paket tamamlanmadı
 
-  // field 1: course (true)
-  // field 7: speed (km/h)
-  if (!nmea_get_field(line, 1, cog_s, sizeof(cog_s))) return 0;
-  if (!nmea_get_field(line, 7, spd_k_s, sizeof(spd_k_s))) return 0;
-
-  if (cog_s[0]) *cog_deg = atof(cog_s);
-  if (spd_k_s[0]) *spd_kmh = atof(spd_k_s);
-
-  return 1;
-}
-
-// Task içinde sürekli çağır: “hazır satır” varsa parse eder
-void gpsSystem_TaskStep(void)
-{
-  if (!nmea_ready) return;
+  g_last_rx_time = HAL_GetTick();
+  uint8_t parsed_valid = 0;
 
   if (!strncmp(nmea_last, "$GNGGA", 6) || !strncmp(nmea_last, "$GPGGA", 6))
   {
@@ -191,6 +194,7 @@ void gpsSystem_TaskStep(void)
       if (fix != 0) {
         g_lat = lat; g_lon = lon; g_alt = alt;
       }
+      parsed_valid = 1;
     }
   }
   else if (!strncmp(nmea_last, "$GNRMC", 6) || !strncmp(nmea_last, "$GPRMC", 6))
@@ -204,6 +208,7 @@ void gpsSystem_TaskStep(void)
       g_spd = spd;
       g_cog = cog;
       if (st == 'A') { g_lat = lat; g_lon = lon; }
+      parsed_valid = 1;
     }
   }
   else if (!strncmp(nmea_last, "$GNVTG", 6) || !strncmp(nmea_last, "$GPVTG", 6))
@@ -211,11 +216,13 @@ void gpsSystem_TaskStep(void)
     double cog=0.0, spd=0.0;
     if (parse_vtg(nmea_last, &cog, &spd)) {
       g_cog = cog;
-      g_spd = spd; // istersen
+      g_spd = spd;
+      parsed_valid = 1;
     }
   }
 
-  nmea_ready = 0;
+  nmea_ready = 0; // Paket okundu, temizle
+  return parsed_valid;
 }
 
 void gpsSystem_Get(GPS_Data *out)
@@ -243,4 +250,27 @@ void gpsSystem_OnUartRxCplt(UART_HandleTypeDef *huart)
     gpsSystem_OnRxByte(gps_rx_ch);
     HAL_UART_Receive_IT(gps_huart, (uint8_t*)&gps_rx_ch, 1);
   }
+}
+
+// GÜNCELLENDİ: Artık yeni veri durumunu döner
+uint8_t GPSTask(GPS_Data *d)
+{
+    uint8_t has_new = gpsSystem_TaskStep();
+    gpsSystem_Get(d);
+    return has_new;
+}
+
+uint8_t gpsSystem_IsHealthy(uint32_t max_age_ms)
+{
+  uint32_t now = HAL_GetTick();
+
+  if ((now - g_last_rx_time) > max_age_ms) {
+    return 0; // UART İletişim Kopukluğu
+  }
+
+  if (g_fix == 0 || g_rmc_status != 'A') {
+    return 0; // Fix Yok
+  }
+
+  return 1;
 }

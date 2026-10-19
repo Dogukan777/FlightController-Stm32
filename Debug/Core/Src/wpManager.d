@@ -30,7 +30,23 @@ Core/Src/wpManager.o: ../Core/Src/wpManager.c ../Core/Inc/wpManager.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/storage.h ../Core/Inc/wpManager.h ../Core/Inc/settings.h
+ ../Core/Inc/flightController.h ../Core/Inc/SH1106.h ../Core/Inc/main.h \
+ ../Core/Inc/fonts.h ../Core/Inc/serialManager.h ../Core/Inc/wpManager.h \
+ ../Core/Inc/storage.h ../Core/Inc/settings.h ../Core/Inc/gyroscope.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
+ ../Core/Inc/FreeRTOSConfig.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
+ ../Core/Inc/compass.h ../Core/Inc/controlPPM.h ../Core/Inc/gpsSystem.h \
+ ../Core/Inc/servoMotor.h ../Core/Inc/stepMotor.h \
+ ../Core/Inc/raspiManager.h
 ../Core/Inc/wpManager.h:
 ../Core/Inc/serialManager.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -63,6 +79,29 @@ Core/Src/wpManager.o: ../Core/Src/wpManager.c ../Core/Inc/wpManager.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/storage.h:
+../Core/Inc/flightController.h:
+../Core/Inc/SH1106.h:
+../Core/Inc/main.h:
+../Core/Inc/fonts.h:
+../Core/Inc/serialManager.h:
 ../Core/Inc/wpManager.h:
+../Core/Inc/storage.h:
 ../Core/Inc/settings.h:
+../Core/Inc/gyroscope.h:
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h:
+../Core/Inc/FreeRTOSConfig.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h:
+../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/portmacro.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
+../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
+../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
+../Core/Inc/compass.h:
+../Core/Inc/controlPPM.h:
+../Core/Inc/gpsSystem.h:
+../Core/Inc/servoMotor.h:
+../Core/Inc/stepMotor.h:
+../Core/Inc/raspiManager.h:

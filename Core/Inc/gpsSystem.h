@@ -18,8 +18,11 @@ typedef struct {
 
 void gpsSystem_Init(UART_HandleTypeDef *huart);
 void gpsSystem_OnRxByte(uint8_t b);     // ISR/callback içinden çağrılacak
-void gpsSystem_TaskStep(void);          // task içinde sık çağır
+//void gpsSystem_TaskStep(void);          // task içinde sık çağır
+uint8_t gpsSystem_TaskStep(void);
 void gpsSystem_Get(GPS_Data *out);      // en güncel veriyi kopyalar
 void gpsSystem_OnUartRxCplt(UART_HandleTypeDef *huart);
-
+//void GPSTask(GPS_Data *d);
+uint8_t GPSTask(GPS_Data *d);
+uint8_t gpsSystem_IsHealthy(uint32_t max_age_ms);
 #endif

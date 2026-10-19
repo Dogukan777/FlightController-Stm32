@@ -1,0 +1,2 @@
+../Core/Src/compass.c:4:9:HMC_Init	40	static
+../Core/Src/compass.c:26:9:HMC_Read	48	static

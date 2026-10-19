@@ -6,7 +6,7 @@
 #include "wpManager.h"
 #include "storage.h"
 #define SM_RX_BUF_SIZE 256
-#define SM_TIMEOUT_MS 2000
+#define SM_TIMEOUT_MS 3000
 
 static UART_HandleTypeDef *g_huart = NULL;
 
@@ -96,6 +96,50 @@ void SM_Start(GPS_Data *out){
         {
             last_rx_tick = HAL_GetTick();
         }
+        else if (strncmp(line, "JOY,", 4) == 0)
+                {
+                    int pwm0, pwm1, pwm2, pwm3;
+
+                    if (sscanf(line, "JOY,%d,%d,%d,%d", &pwm0, &pwm1, &pwm2, &pwm3) == 4)
+                    {
+
+                        int deadband = 50;
+                        int duty = 0;
+
+                        // pwm1 merkezi 1500 kabul edilir
+                        // pwm1 < 1500 ileri
+                        // pwm1 > 1500 geri
+
+                        if (pwm1 < 1500 - deadband)
+                        {
+                            // ileri
+                            duty = (1500 - pwm1) * 999 / 500;
+
+                            if (duty > 999) duty = 999;
+                            if (duty < 0) duty = 0;
+
+                            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, duty); // RPWM
+                            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);    // LPWM
+                        }
+                        else if (pwm1 > 1500 + deadband)
+                        {
+                            // geri
+                            duty = (pwm1 - 1500) * 999 / 500;
+
+                            if (duty > 999) duty = 999;
+                            if (duty < 0) duty = 0;
+
+                            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);    // RPWM
+                            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, duty); // LPWM
+                        }
+                        else
+                        {
+                            // dur
+                            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+                            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+                        }
+                    }
+                }
         else if (strncmp(line, "SETTINGS,", 9) == 0)
         {
         	if (Settings_HandleCommand(line)) {
@@ -104,6 +148,8 @@ void SM_Start(GPS_Data *out){
                 SM_SendString("SETTINGS_FAIL\n");
             }
         }
+
+
         else {
             // WP upload satırları
             WP_ProcessLine(line);

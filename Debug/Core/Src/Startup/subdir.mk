@@ -5,23 +5,23 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 S_SRCS += \
-../Core/Startup/startup_stm32f411retx.s 
+../Core/Src/Startup/startup_stm32f411retx.s 
 
 S_DEPS += \
-./Core/Startup/startup_stm32f411retx.d 
+./Core/Src/Startup/startup_stm32f411retx.d 
 
 OBJS += \
-./Core/Startup/startup_stm32f411retx.o 
+./Core/Src/Startup/startup_stm32f411retx.o 
 
 
 # Each subdirectory must supply rules for building sources it contributes
-Core/Startup/%.o: ../Core/Startup/%.s Core/Startup/subdir.mk
+Core/Src/Startup/%.o: ../Core/Src/Startup/%.s Core/Src/Startup/subdir.mk
 	arm-none-eabi-gcc -mcpu=cortex-m4 -g3 -DDEBUG -c -I../Core/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc -I../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy -I../Middlewares/Third_Party/FreeRTOS/Source/include -I../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -I../Drivers/CMSIS/Device/ST/STM32F4xx/Include -I../Drivers/CMSIS/Include -u _printf_float -u _scanf_float -x assembler-with-cpp -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "$@" "$<"
 
-clean: clean-Core-2f-Startup
+clean: clean-Core-2f-Src-2f-Startup
 
-clean-Core-2f-Startup:
-	-$(RM) ./Core/Startup/startup_stm32f411retx.d ./Core/Startup/startup_stm32f411retx.o
+clean-Core-2f-Src-2f-Startup:
+	-$(RM) ./Core/Src/Startup/startup_stm32f411retx.d ./Core/Src/Startup/startup_stm32f411retx.o
 
-.PHONY: clean-Core-2f-Startup
+.PHONY: clean-Core-2f-Src-2f-Startup
 

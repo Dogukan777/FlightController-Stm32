@@ -103,7 +103,6 @@ uint8_t Settings_HandleCommand(const char *line)
     }
 
     if (!Settings_ParseLine(line)) {
-        displayTwoLines("SETTINGS", "PARSE FAIL");
         return 0;
     }
 
@@ -114,9 +113,9 @@ uint8_t Settings_HandleCommand(const char *line)
 
 
     if (Settings_SaveToFlash()) {
-        displayTwoLines("SETTINGS", "SAVED");
+
     } else {
-        displayTwoLines("SETTINGS", "SAVE FAIL");
+
         return 0;
     }
 
@@ -124,7 +123,22 @@ uint8_t Settings_HandleCommand(const char *line)
 }
 
 
-uint32_t Settings_GetTimChannel(uint8_t index)
+ServoTimMap_t Settings_GetTim(uint8_t index)
+{
+    ServoTimMap_t t;
+
+    /*switch (index) {
+        case 0: t.htim = &htim3; t.channel = TIM_CHANNEL_1; break;
+        case 1: t.htim = &htim3; t.channel = TIM_CHANNEL_2; break;
+        case 2: t.htim = &htim4; t.channel = TIM_CHANNEL_3; break;
+        case 3: t.htim = &htim4; t.channel = TIM_CHANNEL_4; break;
+        default: t.htim = &htim3; t.channel = TIM_CHANNEL_1; break;
+    }*/
+
+    return t;
+}
+
+/*uint32_t Settings_GetTimChannel(uint8_t index)
 {
     switch (index) {
         case 0: return TIM_CHANNEL_1; // servo1
@@ -133,23 +147,27 @@ uint32_t Settings_GetTimChannel(uint8_t index)
         case 3: return TIM_CHANNEL_4; // servo4
         default: return TIM_CHANNEL_1;
     }
-}
+}*/
 void Servo_ApplyByIndex(uint8_t index)
 {
     if (index >= 4) return;
 
     ServoSetting_t s = g_settings.servo[index];
     uint16_t pulse = Settings_Clamp(s.inst, s.min, s.max);
-    uint32_t channel = Settings_GetTimChannel(index);
 
-    __HAL_TIM_SET_COMPARE(&htim3, channel, pulse);
+    ServoTimMap_t t = Settings_GetTim(index);
+
+    //__HAL_TIM_SET_COMPARE(t.htim, t.channel, pulse);
 }
 void Servo_StartAllAndApply(void)
 {
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+	// TIM3
+	//HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	//HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+
+	// TIM4
+	//HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+	//HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
     Servo_ApplyByIndex(0);
     Servo_ApplyByIndex(1);
@@ -163,7 +181,42 @@ uint16_t Settings_Clamp(uint16_t value, uint16_t min, uint16_t max)
     return value;
 }
 
+void Servo_WriteByIndex(uint8_t index, uint16_t pwm)
+{
+    if (index >= 4) return;
 
+    ServoSetting_t s = g_settings.servo[index];
+    pwm = Settings_Clamp(pwm, s.min, s.max);
+
+    ServoTimMap_t t = Settings_GetTim(index);
+
+   // __HAL_TIM_SET_COMPARE(t.htim, t.channel, pwm);
+}
+
+uint16_t Settings_MapPercentToServo(uint8_t index, int16_t percent)
+{
+    if (index >= 4) return 1500;
+
+    ServoSetting_t s = g_settings.servo[index];
+
+    if (percent < -100) percent = -100;
+    if (percent > 100)  percent = 100;
+
+    if (percent == 0) {
+        return s.inst;
+    }
+
+    if (percent > 0) {
+        // 0..100  => inst..max
+        uint32_t pwm = s.inst + ((int32_t)(s.max - s.inst) * percent) / 100;
+        return Settings_Clamp((uint16_t)pwm, s.min, s.max);
+    } else {
+        // -100..0 => min..inst
+        // percent negatif olduğu için toplama yapıyoruz
+        uint32_t pwm = s.inst + ((int32_t)(s.inst - s.min) * percent) / 100;
+        return Settings_Clamp((uint16_t)pwm, s.min, s.max);
+    }
+}
 
 
 void Settings_PrintAllOLED(void)
@@ -181,4 +234,6 @@ void Settings_PrintAllOLED(void)
         displayTwoLines(top, bottom);
     }
 }
+
+
 

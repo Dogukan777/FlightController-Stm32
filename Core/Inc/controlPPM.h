@@ -30,7 +30,9 @@ uint16_t percent_to_pwm(int16_t percent);
 void Servo_UpdateFromPitch(void);
 void Servo_UpdateFromYaw(void);
 void Servo_UpdateFromRoll(void);
-
-
+void Brushed_Motor_Write(uint16_t us);
+void Dual_Motor_Write(uint16_t throttle_us, uint16_t steering_us);
+void Motor_Set_PWM(TIM_HandleTypeDef *htim, int32_t speed);
+static void Set_Motor_Outputs(int32_t left_duty, int32_t right_duty, uint32_t arr);
 
 #endif

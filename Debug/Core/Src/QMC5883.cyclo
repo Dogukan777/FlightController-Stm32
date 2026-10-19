@@ -1,0 +1,6 @@
+../Core/Src/QMC5883.c:4:9:QMC5883_Init	7
+../Core/Src/QMC5883.c:29:9:QMC5883_Read	5
+../Core/Src/QMC5883.c:59:7:QMC5883_ReadHeading	2
+../Core/Src/QMC5883.c:67:9:QMC5883_ReadAverage	5
+../Core/Src/QMC5883.c:97:9:QMC5883_Standby	2
+../Core/Src/QMC5883.c:105:9:QMC5883_Reset	2

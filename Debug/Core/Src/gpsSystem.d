@@ -39,7 +39,13 @@ Core/Src/gpsSystem.o: ../Core/Src/gpsSystem.c ../Core/Inc/gpsSystem.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h \
  ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h \
- ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
+ ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h \
+ ../Core/Inc/serialManager.h ../Core/Inc/flightController.h \
+ ../Core/Inc/SH1106.h ../Core/Inc/fonts.h ../Core/Inc/serialManager.h \
+ ../Core/Inc/wpManager.h ../Core/Inc/storage.h ../Core/Inc/settings.h \
+ ../Core/Inc/gyroscope.h ../Core/Inc/compass.h ../Core/Inc/controlPPM.h \
+ ../Core/Inc/gpsSystem.h ../Core/Inc/servoMotor.h ../Core/Inc/stepMotor.h \
+ ../Core/Inc/raspiManager.h
 ../Core/Inc/gpsSystem.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -83,3 +89,18 @@ Core/Src/gpsSystem.o: ../Core/Src/gpsSystem.c ../Core/Inc/gpsSystem.h \
 ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h:
 ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h:
+../Core/Inc/serialManager.h:
+../Core/Inc/flightController.h:
+../Core/Inc/SH1106.h:
+../Core/Inc/fonts.h:
+../Core/Inc/serialManager.h:
+../Core/Inc/wpManager.h:
+../Core/Inc/storage.h:
+../Core/Inc/settings.h:
+../Core/Inc/gyroscope.h:
+../Core/Inc/compass.h:
+../Core/Inc/controlPPM.h:
+../Core/Inc/gpsSystem.h:
+../Core/Inc/servoMotor.h:
+../Core/Inc/stepMotor.h:
+../Core/Inc/raspiManager.h:

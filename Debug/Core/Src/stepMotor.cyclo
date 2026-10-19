@@ -1,0 +1,4 @@
+../Core/Src/stepMotor.c:5:13:delay_us	3
+../Core/Src/stepMotor.c:21:6:StepMotor_Init	1
+../Core/Src/stepMotor.c:29:6:StepMotor_Step	4
+../Core/Src/stepMotor.c:61:6:StepMotor_RotateAngle	3

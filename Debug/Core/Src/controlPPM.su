@@ -1,8 +1,4 @@
-../Core/Src/controlPPM.c:19:6:controlPPM_Init	8	static
-../Core/Src/controlPPM.c:32:6:controlPPM_Start	16	static
-../Core/Src/controlPPM.c:58:6:ESC_WriteUs	16	static
-../Core/Src/controlPPM.c:67:9:ppm_to_percent	16	static
-../Core/Src/controlPPM.c:76:10:percent_to_pwm	16	static
-../Core/Src/controlPPM.c:84:6:Servo_UpdateFromPitch	16	static
-../Core/Src/controlPPM.c:96:6:Servo_UpdateFromRoll	16	static
-../Core/Src/controlPPM.c:110:6:Servo_UpdateFromYaw	16	static
+../Core/Src/controlPPM.c:24:6:controlPPM_Init	8	static
+../Core/Src/controlPPM.c:48:6:HAL_TIM_IC_CaptureCallback	24	static
+../Core/Src/controlPPM.c:87:6:controlPPM_Start	184	static
+../Core/Src/controlPPM.c:126:6:Brushed_Motor_Write	32	static

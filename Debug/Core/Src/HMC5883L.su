@@ -1,0 +1,5 @@
+../Core/Src/HMC5883L.c:19:8:HMC5883L_Init	24	static
+../Core/Src/HMC5883L.c:73:8:update_HMC5883L	16	static
+../Core/Src/HMC5883L.c:82:7:getGausX	16	static
+../Core/Src/HMC5883L.c:89:7:getGausY	16	static
+../Core/Src/HMC5883L.c:96:7:getGausZ	16	static

@@ -3,8 +3,10 @@
 ../Core/Src/settings.c:60:9:Settings_ParseLine	4
 ../Core/Src/settings.c:89:16:Settings_GetServo	2
 ../Core/Src/settings.c:97:9:Settings_HandleCommand	5
-../Core/Src/settings.c:127:10:Settings_GetTimChannel	5
-../Core/Src/settings.c:137:6:Servo_ApplyByIndex	5
-../Core/Src/settings.c:147:6:Servo_StartAllAndApply	1
-../Core/Src/settings.c:159:10:Settings_Clamp	3
-../Core/Src/settings.c:169:6:Settings_PrintAllOLED	2
+../Core/Src/settings.c:126:15:Settings_GetTim	1
+../Core/Src/settings.c:151:6:Servo_ApplyByIndex	2
+../Core/Src/settings.c:162:6:Servo_StartAllAndApply	1
+../Core/Src/settings.c:177:10:Settings_Clamp	3
+../Core/Src/settings.c:184:6:Servo_WriteByIndex	2
+../Core/Src/settings.c:196:10:Settings_MapPercentToServo	6
+../Core/Src/settings.c:222:6:Settings_PrintAllOLED	2

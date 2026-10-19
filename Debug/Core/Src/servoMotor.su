@@ -1,0 +1,4 @@
+../Core/Src/servoMotor.c:9:6:Servo_Init	8	static
+../Core/Src/servoMotor.c:20:6:Servo_WriteMicroseconds	16	static
+../Core/Src/servoMotor.c:34:6:Servo_WriteAngle	24	static
+../Core/Src/servoMotor.c:51:6:Servo_WriteAngleSmooth	32	static
